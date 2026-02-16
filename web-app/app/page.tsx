@@ -59,7 +59,7 @@ export default function Home() {
       </motion.form>
       
       <div className="absolute bottom-4 text-xs text-yellow-500/50">
-        Powered by Trae & Zhipu AI
+        汕头水电车间 智轨先锋组
       </div>
     </div>
   );
