@@ -13,7 +13,6 @@ export default function CardPage() {
   const name = searchParams.get("name");
   
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
@@ -26,20 +25,6 @@ export default function CardPage() {
       try {
         setLoading(true);
         setError("");
-
-        // Randomly select a local background image
-        const bgImages = [
-          "/backgrounds/bg1.jpg",
-          "/backgrounds/bg2.jpg",
-          "/backgrounds/bg3.jpg",
-          "/backgrounds/bg4.jpg",
-          "/backgrounds/bg5.jpg",
-          "/backgrounds/bg6.jpg"
-        ];
-        const randomBg = bgImages[Math.floor(Math.random() * bgImages.length)];
-        // Preload image to avoid flicker
-        const img = new Image();
-        img.src = randomBg;
         
         // Fetch greeting
         const greetingRes = await fetch("/api/generate-greeting", {
@@ -51,9 +36,6 @@ export default function CardPage() {
         if (!greetingRes.ok) throw new Error("Failed to generate greeting");
         const greetingData = await greetingRes.json();
         setGreeting(greetingData);
-
-        // Set the local image
-        setImageUrl(randomBg);
 
       } catch (err) {
         console.error(err);
@@ -71,19 +53,65 @@ export default function CardPage() {
   }, [name]);
 
   const handleDownload = async () => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || !name) return;
     try {
+      const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+      if (fonts?.ready) {
+        await fonts.ready.catch(() => {});
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
       const canvas = await html2canvas(cardRef.current, {
         useCORS: true, // Important for external images
         scale: 2, // Better quality
         backgroundColor: null,
+        onclone: (doc) => {
+          const root = doc.getElementById("card-capture");
+          if (!root) return;
+
+          const win = doc.defaultView;
+          if (!win) return;
+
+          const nodes = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+          for (const node of nodes) {
+            const style = win.getComputedStyle(node);
+            node.style.setProperty("background-color", style.backgroundColor, "important");
+            node.style.setProperty("color", style.color, "important");
+            node.style.setProperty("border-top-color", style.borderTopColor, "important");
+            node.style.setProperty("border-right-color", style.borderRightColor, "important");
+            node.style.setProperty("border-bottom-color", style.borderBottomColor, "important");
+            node.style.setProperty("border-left-color", style.borderLeftColor, "important");
+            node.style.setProperty("outline-color", style.outlineColor, "important");
+            node.style.setProperty("box-shadow", "none", "important");
+            node.style.setProperty("text-shadow", "none", "important");
+          }
+        },
       });
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+      });
+
+      const filename = `${name}-NewYearCard.png`;
+      const file = new File([blob], filename, { type: blob.type });
+      const nav = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean;
+        share?: (data: ShareData) => Promise<void>;
+      };
+
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: filename }).catch(() => {});
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = `${name}-NewYearCard.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = filename;
+      link.href = url;
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       console.error("Download failed:", err);
       alert("保存图片失败，请尝试长按截图");
@@ -133,13 +161,12 @@ export default function CardPage() {
         className="w-full max-w-sm md:max-w-md relative z-10"
       >
         <div 
+          id="card-capture"
           ref={cardRef}
-            className="bg-white/10 backdrop-blur-md border-2 border-yellow-500/30 rounded-2xl overflow-hidden shadow-2xl relative w-full h-full min-h-[600px]"
+            className="bg-white/10 backdrop-blur-md border-2 border-yellow-500/30 rounded-2xl overflow-hidden relative w-full h-full min-h-[600px]"
             style={{
-              backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
-              background: !imageUrl ? "linear-gradient(135deg, #8B0000 0%, #B22222 50%, #FF0000 100%)" : undefined,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
+              background: "linear-gradient(135deg, #8B0000 0%, #B22222 50%, #FF0000 100%)",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)",
             }}
           >
           {/* Overlay for readability */}

@@ -12,22 +12,33 @@ export default function MusicPlayer() {
     const playlist = [
       "/music/cny-upbeat-chinese-new-year.mp3",
       "/music/cny-chinese-new-year.mp3",
-      "/music/cny-is-coming.mp3",
       "/music/cny-lunar-new-year.mp3",
+      "/music/festive-1.mp3",
+      "/music/festive-2.mp3",
     ];
 
-    const randomSong = playlist[Math.floor(Math.random() * playlist.length)];
-    const cacheBust = process.env.NODE_ENV === "development" ? `?v=${Date.now()}` : "";
-
-    const audio = new Audio(`${randomSong}${cacheBust}`);
+    let currentIndex = Math.floor(Math.random() * playlist.length);
+    const audio = new Audio(playlist[currentIndex]);
     audio.loop = true;
     audio.volume = 0.4;
     audioRef.current = audio;
 
-    const tryPlay = () =>
-      audio.play().then(() => {
-        setIsPlaying(true);
-      });
+    const tryPlay = () => audio.play().then(() => setIsPlaying(true));
+
+    const switchToNext = () => {
+      if (playlist.length <= 1) return;
+      currentIndex = (currentIndex + 1) % playlist.length;
+      audio.pause();
+      audio.src = playlist[currentIndex];
+      audio.load();
+      tryPlay().catch(() => {});
+    };
+
+    const handleError = () => {
+      switchToNext();
+    };
+
+    audio.addEventListener("error", handleError);
 
     tryPlay().catch(() => {
       setIsPlaying(false);
@@ -41,6 +52,7 @@ export default function MusicPlayer() {
     });
 
     return () => {
+      audio.removeEventListener("error", handleError);
       audio.pause();
       audio.src = "";
     };
