@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杨昊的新年贺卡 - 预览</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #8B0000 0%, #B22222 50%, #FF0000 100%);
+            color: #FFD700;
+            font-family: "Ma Shan Zheng", "KaiTi", serif; /* 尝试使用书法字体，如果没有则回退 */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 引入 Google Fonts 书法字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            padding: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            max-width: 90%;
+            width: 320px;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: slideDown 1s forwards 0.5s;
+        }
+
+        .name {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin: 10px 0;
+            opacity: 0;
+            animation: zoomIn 1s forwards 1s;
+        }
+
+        .poem {
+            font-size: 1.4rem;
+            line-height: 1.8;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .poem p {
+            margin: 5px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 1s forwards;
+        }
+        
+        /* 逐行显示诗句 */
+        .poem p:nth-child(1) { animation-delay: 2s; }
+        .poem p:nth-child(2) { animation-delay: 2.8s; }
+        .poem p:nth-child(3) { animation-delay: 3.6s; }
+        .poem p:nth-child(4) { animation-delay: 4.4s; }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            animation: fadeIn 1s forwards 5.5s;
+            opacity: 0;
+        }
+
+        /* 简单的粒子特效模拟 (雪花/金粉) */
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) translateX(0); opacity: 1; }
+            100% { transform: translateY(110vh) translateX(20px); opacity: 0; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- 模拟粒子 -->
+    <script>
+        function createParticles() {
+            const particleCount = 30;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDuration = Math.random() * 3 + 2 + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                particle.style.opacity = Math.random();
+                document.body.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+
+    <div class="container">
+        <div class="title">✨ 2025 新年大吉 ✨</div>
+        <div class="name">杨昊</div>
+        
+        <div class="poem">
+            <!-- 藏头诗示例 -->
+            <p><strong>杨</strong>柳依依报春晓</p>
+            <p><strong>昊</strong>天广阔任君翱</p>
+            <p><strong>新</strong>岁宏图千万里</p>
+            <p><strong>年</strong>年胜意步步高</p>
+        </div>
+
+        <div class="footer">
+            Design by AI & Trae <br>
+            (长按保存图片)
+        </div>
+    </div>
+
+</body>
+</html>
