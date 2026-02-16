@@ -127,7 +127,7 @@ export default function CardPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
         <p className="text-xl animate-pulse">正在为您调制新年祝福...</p>
-        <p className="text-sm opacity-70 mt-2">AI 正在撰写藏头诗 & 绘制贺卡</p>
+        <p className="text-sm opacity-70 mt-2">AI 正在撰写诗词 & 绘制贺卡</p>
       </div>
     );
   }
