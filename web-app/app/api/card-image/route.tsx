@@ -4,8 +4,8 @@ import { NextRequest } from 'next/server';
 // export const runtime = 'edge'; // Switch to Node.js runtime for better stability and debugging
 
 async function loadGoogleFont(font: string, text: string) {
-  try {
-    const url = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`;
+  const fetchFont = async (baseUrl: string) => {
+    const url = `${baseUrl}/css2?family=${font}&text=${encodeURIComponent(text)}`;
     const css = await (await fetch(url)).text();
     const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
 
@@ -15,15 +15,21 @@ async function loadGoogleFont(font: string, text: string) {
         return await response.arrayBuffer();
       }
     }
-  } catch (e) {
-    console.error('Font loading failed:', e);
-    // Fallback or rethrow? 
-    // If we don't have a font, Satori might fail or use a default if provided.
-    // We will throw to let the main handler catch it.
-    throw e;
-  }
+    throw new Error('Failed to fetch font resource');
+  };
 
-  throw new Error('failed to load font data');
+  try {
+    // Try reliable mirror first (fonts.loli.net is a Google Fonts mirror for China)
+    return await fetchFont('https://fonts.loli.net');
+  } catch (e) {
+    console.warn('Failed to load from mirror, trying Google Fonts...', e);
+    try {
+      return await fetchFont('https://fonts.googleapis.com');
+    } catch (e2) {
+      console.error('Font loading failed from all sources:', e2);
+      throw e2;
+    }
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -81,9 +87,12 @@ export async function GET(req: NextRequest) {
           <div
             style={{
               position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.1)',
-              backgroundImage: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent, rgba(0,0,0,0.2))',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              backgroundImage: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 100%)',
             }}
           />
 
@@ -97,8 +106,9 @@ export async function GET(req: NextRequest) {
               height: '100%',
               padding: '60px 40px',
               position: 'relative',
-              // zIndex: 10, // Removed to avoid Satori unitless error
               color: '#FEF3C7', // text-yellow-100
+              border: '2px solid rgba(234, 179, 8, 0.3)', // border-yellow-500/30
+              borderRadius: '16px', // rounded-2xl
             }}
           >
             {/* Header */}
@@ -158,10 +168,8 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
 
-            {/* Footer */}
-            <div style={{ display: 'flex', fontSize: 16, opacity: 0.6 }}>
-              汕头水电车间 智轨先锋组
-            </div>
+            {/* Footer Removed per request */}
+            <div style={{ display: 'flex', height: 20 }}></div>
           </div>
         </div>
       ),
