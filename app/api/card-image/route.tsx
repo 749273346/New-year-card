@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
             {/* Header */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ fontSize: 60, fontWeight: 700, color: '#FBBF24', textShadow: '0 4px 8px rgba(0,0,0,0.3)', marginBottom: 10 }}>
-                ✨ 新年快乐 ✨
+                新年快乐
               </div>
               <div style={{ fontSize: 24, opacity: 0.8 }}>2026 丙午马年</div>
             </div>

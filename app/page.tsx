@@ -24,7 +24,7 @@ export default function Home() {
         transition={{ duration: 0.8 }}
         className="text-4xl font-bold mb-8 text-center"
       >
-        ✨ 2026 新年贺卡生成器 ✨
+        2026新年贺卡AI生成
       </motion.h1>
 
       <motion.form 

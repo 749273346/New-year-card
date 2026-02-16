@@ -114,7 +114,7 @@ function CardContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
-        <p className="text-xl animate-pulse">正在为您调制新年祝福...</p>
+        <p className="text-xl animate-pulse">正在为您制作新年贺卡...</p>
         <p className="text-sm opacity-70 mt-2">AI 正在撰写诗词 & 绘制贺卡</p>
       </div>
     );
@@ -168,7 +168,7 @@ function CardContent() {
               transition={{ delay: 0.5 }}
             >
               <h1 className="text-3xl font-bold text-yellow-400 drop-shadow-lg font-serif">
-                ✨ 新年快乐 ✨
+                新年快乐
               </h1>
               <p className="text-sm opacity-80 mt-1">2026 丙午马年</p>
             </motion.div>
