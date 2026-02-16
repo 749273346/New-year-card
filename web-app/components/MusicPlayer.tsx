@@ -13,8 +13,7 @@ export default function MusicPlayer() {
       "/music/cny-upbeat-chinese-new-year.mp3",
       "/music/cny-chinese-new-year.mp3",
       "/music/cny-lunar-new-year.mp3",
-      "/music/festive-1.mp3",
-      "/music/festive-2.mp3",
+      "/music/cny-is-coming.mp3",
     ];
 
     let currentIndex = Math.floor(Math.random() * playlist.length);
@@ -34,8 +33,13 @@ export default function MusicPlayer() {
       tryPlay().catch(() => {});
     };
 
-    const handleError = () => {
-      switchToNext();
+    const handleError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      console.error("Audio error:", target.error, target.src);
+      // Only switch if it's a real error, not an abort
+      if (target.error && target.error.code !== target.error.MEDIA_ERR_ABORTED) {
+          switchToNext();
+      }
     };
 
     audio.addEventListener("error", handleError);

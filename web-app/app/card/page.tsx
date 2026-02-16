@@ -4,7 +4,6 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import html2canvas from "html2canvas";
 import Fireworks from "@/components/Fireworks";
 import { Download, RefreshCw } from "lucide-react";
 
@@ -15,6 +14,7 @@ export default function CardPage() {
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -53,54 +53,36 @@ export default function CardPage() {
   }, [name]);
 
   const handleDownload = async () => {
-    if (!cardRef.current || !name) return;
+    if (!name || isDownloading || !greeting) return;
+    
     try {
-      const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
-      if (fonts?.ready) {
-        await fonts.ready.catch(() => {});
-      }
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      setIsDownloading(true);
 
-      const canvas = await html2canvas(cardRef.current, {
-        useCORS: true, // Important for external images
-        scale: 2, // Better quality
-        backgroundColor: null,
-        onclone: (doc) => {
-          const root = doc.getElementById("card-capture");
-          if (!root) return;
-
-          const win = doc.defaultView;
-          if (!win) return;
-
-          const nodes = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
-          for (const node of nodes) {
-            const style = win.getComputedStyle(node);
-            node.style.setProperty("background-color", style.backgroundColor, "important");
-            node.style.setProperty("color", style.color, "important");
-            node.style.setProperty("border-top-color", style.borderTopColor, "important");
-            node.style.setProperty("border-right-color", style.borderRightColor, "important");
-            node.style.setProperty("border-bottom-color", style.borderBottomColor, "important");
-            node.style.setProperty("border-left-color", style.borderLeftColor, "important");
-            node.style.setProperty("outline-color", style.outlineColor, "important");
-            node.style.setProperty("box-shadow", "none", "important");
-            node.style.setProperty("text-shadow", "none", "important");
-          }
-        },
-      });
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+      const params = new URLSearchParams({
+        name: name,
+        poem: JSON.stringify(greeting.poem),
+        wish: greeting.wish,
       });
 
+      const response = await fetch(`/api/card-image?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to generate image");
+      
+      const blob = await response.blob();
       const filename = `${name}-NewYearCard.png`;
-      const file = new File([blob], filename, { type: blob.type });
+      const file = new File([blob], filename, { type: "image/png" });
+
       const nav = navigator as Navigator & {
         canShare?: (data: ShareData) => boolean;
         share?: (data: ShareData) => Promise<void>;
       };
 
       if (nav.share && nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: filename }).catch(() => {});
-        return;
+        try {
+          await nav.share({ files: [file], title: filename });
+          return;
+        } catch (shareError) {
+          console.warn("Share failed or cancelled, falling back to download:", shareError);
+        }
       }
 
       const url = URL.createObjectURL(blob);
@@ -110,13 +92,19 @@ export default function CardPage() {
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
     } catch (err) {
-      console.error("Download failed:", err);
-      alert("保存图片失败，请尝试长按截图");
-    }
-  };
+       console.error("Download failed:", err);
+       alert("保存图片失败，请尝试长按截图保存");
+     } finally {
+       setIsDownloading(false);
+     }
+   };
 
   if (!name) {
     return <div className="text-white text-center mt-20">Please provide a name.</div>;
@@ -172,7 +160,7 @@ export default function CardPage() {
           {/* Overlay for readability */}
           <div className="absolute inset-0 bg-black/30 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
 
-          <div className="relative z-20 p-8 text-center text-yellow-100 min-h-[500px] flex flex-col justify-between">
+          <div id="card-content" className="relative z-20 p-8 text-center text-yellow-100 min-h-[500px] flex flex-col justify-between">
             {/* Header */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
@@ -186,14 +174,15 @@ export default function CardPage() {
             </motion.div>
 
             {/* Content */}
-            <div className="my-8 space-y-6">
+            <div className="my-8 space-y-6 flex flex-col items-center">
               <motion.div 
+                id="name-container"
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.8, type: "spring" }}
-                className="inline-block px-6 py-2 border-y-2 border-yellow-500/50 bg-black/20 backdrop-blur-sm rounded-full"
+                className="px-6 py-2 border-y-2 border-yellow-500/50 bg-black/20 backdrop-blur-sm rounded-full flex items-center justify-center"
               >
-                <h2 className="text-4xl font-bold text-white drop-shadow-md">{name}</h2>
+                <h2 className="text-3xl font-bold text-white drop-shadow-md">{name}</h2>
               </motion.div>
 
               <div className="space-y-3 font-serif text-lg md:text-xl leading-relaxed text-yellow-50 drop-shadow-md">
@@ -233,10 +222,19 @@ export default function CardPage() {
         <div className="mt-8 flex gap-4 justify-center relative z-20">
           <button 
             onClick={handleDownload}
-            className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-red-900 rounded-full font-bold shadow-lg hover:bg-yellow-400 transition transform hover:scale-105 active:scale-95"
+            disabled={isDownloading}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition transform ${
+              isDownloading 
+                ? "bg-yellow-600 text-yellow-100 cursor-not-allowed opacity-80" 
+                : "bg-yellow-500 text-red-900 hover:bg-yellow-400 hover:scale-105 active:scale-95"
+            }`}
           >
-            <Download size={20} />
-            保存贺卡
+            {isDownloading ? (
+              <RefreshCw className="animate-spin" size={20} />
+            ) : (
+              <Download size={20} />
+            )}
+            {isDownloading ? "保存中..." : "保存贺卡"}
           </button>
           <button 
             onClick={() => window.location.href = '/'}

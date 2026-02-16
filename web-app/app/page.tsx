@@ -12,10 +12,6 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      const audio = new Audio("/firework.mp3");
-      audio.volume = 0.8;
-      audio.play().catch(() => {});
-
       router.push(`/card?name=${encodeURIComponent(name)}`);
     }
   };

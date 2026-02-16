@@ -17,7 +17,7 @@
     -   `framer-motion`: 用于文字和 UI 元素的优雅入场/交互。
     -   `canvas-confetti` 或 `tsparticles`: 实现高性能的烟花/雪花粒子特效。
 -   **AI 服务**: Vercel AI SDK + Google Gemini (或 OpenAI) - 用于生成文本内容。
--   **图片合成**: `satori` + `@vercel/og` (或 `html2canvas`) - 将动态网页高保真转换为静态图片。
+-   **图片合成**: `satori` + `@vercel/og` - 将动态网页高保真转换为静态图片。
 -   **部署**: Vercel - 零配置上线，支持 Serverless API。
 
 ## 开发步骤 (Roadmap)
