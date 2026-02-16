@@ -76,7 +76,9 @@ export default function CardPage() {
       const link = document.createElement("a");
       link.download = `${name}-NewYearCard.png`;
       link.href = canvas.toDataURL("image/png");
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (err) {
       console.error("Download failed:", err);
       alert("保存图片失败，请尝试长按截图");
@@ -118,7 +120,7 @@ export default function CardPage() {
     <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-800 to-red-950 flex flex-col items-center py-8 px-4 overflow-hidden relative">
       <Fireworks />
       
-      {/* Card Container */}
+          {/* Card Wrapper for Motion */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -127,13 +129,14 @@ export default function CardPage() {
       >
         <div 
           ref={cardRef}
-          className="bg-white/10 backdrop-blur-md border-2 border-yellow-500/30 rounded-2xl overflow-hidden shadow-2xl relative"
-          style={{
-            backgroundImage: imageUrl ? `url(${imageUrl})` : "linear-gradient(135deg, #8B0000 0%, #B22222 50%, #FF0000 100%)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
+            className="bg-white/10 backdrop-blur-md border-2 border-yellow-500/30 rounded-2xl overflow-hidden shadow-2xl relative w-full h-full min-h-[600px]"
+            style={{
+              backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
+              background: !imageUrl ? "linear-gradient(135deg, #8B0000 0%, #B22222 50%, #FF0000 100%)" : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
           {/* Overlay for readability */}
           <div className="absolute inset-0 bg-black/30 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
 
@@ -195,7 +198,7 @@ export default function CardPage() {
         </div>
 
         {/* Actions */}
-        <div className="mt-8 flex gap-4 justify-center">
+        <div className="mt-8 flex gap-4 justify-center relative z-20">
           <button 
             onClick={handleDownload}
             className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-red-900 rounded-full font-bold shadow-lg hover:bg-yellow-400 transition transform hover:scale-105 active:scale-95"
@@ -209,8 +212,7 @@ export default function CardPage() {
           >
             <RefreshCw size={20} />
             再做一张
-          </button>
-        </div>
+          </button></div>
       </motion.div>
     </div>
   );
