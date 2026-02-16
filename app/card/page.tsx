@@ -2,12 +2,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import Fireworks from "@/components/Fireworks";
 import { Download, RefreshCw } from "lucide-react";
 
-export default function CardPage() {
+function CardContent() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name");
   
@@ -245,5 +245,18 @@ export default function CardPage() {
           </button></div>
       </motion.div>
     </div>
+  );
+}
+
+export default function CardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
+        <p className="text-xl animate-pulse">正在加载...</p>
+      </div>
+    }>
+      <CardContent />
+    </Suspense>
   );
 }
