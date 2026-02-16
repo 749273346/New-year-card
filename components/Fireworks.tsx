@@ -25,7 +25,7 @@ export default function Fireworks() {
       playPromise.catch((e) => {
         // Ignore AbortError which happens if component unmounts quickly
         if (e.name !== 'AbortError') {
-          console.log("Audio play failed", e);
+          // console.log("Audio play failed", e);
         }
       });
     }

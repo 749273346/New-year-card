@@ -137,6 +137,26 @@ function CardContent() {
     );
   }
 
+  // Helper function to render wish with bold name
+  const renderWishWithBoldName = (wish: string, name: string) => {
+    if (!wish || !name) return wish;
+    const parts = wish.split(name);
+    return (
+      <>
+        {parts.map((part, index) => (
+          <span key={index}>
+            {part}
+            {index < parts.length - 1 && (
+              <span className="font-extrabold text-yellow-400 mx-1 text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                {name}
+              </span>
+            )}
+          </span>
+        ))}
+      </>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-800 to-red-950 flex flex-col items-center py-8 px-4 overflow-hidden relative">
       <Fireworks />
@@ -175,16 +195,7 @@ function CardContent() {
 
             {/* Content */}
             <div className="my-8 space-y-6 flex flex-col items-center">
-              <motion.div 
-                id="name-container"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.8, type: "spring" }}
-                className="px-6 py-2 border-y-2 border-yellow-500/50 bg-black/20 backdrop-blur-sm rounded-full flex items-center justify-center"
-              >
-                <h2 className="text-3xl font-bold text-white drop-shadow-md">{name}</h2>
-              </motion.div>
-
+              
               <div className="space-y-3 font-serif text-lg md:text-xl leading-relaxed text-yellow-50 drop-shadow-md">
                 {greeting?.poem.map((line, index) => (
                   <motion.p
@@ -199,17 +210,20 @@ function CardContent() {
                 ))}
               </div>
 
+              {/* Wish Section */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 2.5 }}
-                className="mt-6 pt-4 border-t border-white/20"
+                className="mt-6 px-4 py-3 bg-black/20 rounded-xl border border-yellow-500/20"
               >
-                <p className="text-sm italic opacity-90">
-                  “{greeting?.wish}”
+                <p className="text-sm md:text-base italic leading-relaxed text-yellow-100">
+                  {greeting && name && renderWishWithBoldName(greeting.wish, name)}
                 </p>
               </motion.div>
             </div>
+
+
 
             {/* Footer */}
             <div className="text-xs opacity-50">
