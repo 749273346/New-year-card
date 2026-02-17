@@ -22,20 +22,21 @@ export default function Home() {
     (document.activeElement as HTMLElement | null)?.blur?.();
 
     const url = `/card?name=${encodeURIComponent(name)}`;
-    // Use setTimeout to allow the UI to update (show loading spinner) before
-    // the heavy lifting of navigation starts.
+    
+    // 延迟 80ms 确保 Loading 遮罩层完成渲染上屏
+    // 解决移动端点击后“假死”或无反馈的问题
     setTimeout(() => {
       router.push(url);
-    }, 10);
+    }, 80);
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-red-800 text-yellow-300 p-4">
       {isNavigating && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-900 text-yellow-300">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-red-900 text-yellow-300">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
-          <p className="text-xl animate-pulse">正在为您制作新年贺卡...</p>
-          <p className="text-sm opacity-70 mt-2">请稍候，即将进入贺卡页面</p>
+          <p className="text-xl animate-pulse font-bold">正在为您制作贺卡...</p>
+          <p className="text-sm opacity-70 mt-2">请稍候，精彩即将呈现</p>
         </div>
       )}
       <motion.h1 
