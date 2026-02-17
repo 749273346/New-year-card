@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
 import Fireworks from "@/components/Fireworks";
 import { Download, RefreshCw, Sparkles } from "lucide-react";
-import { CornerPattern, CloudPattern, Seal, HorseSilhouette } from "@/components/CardDecorations";
+import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
 
 function CardContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const name = searchParams.get("name");
   
@@ -26,39 +27,39 @@ function CardContent() {
     setTheme(getRandomTheme());
   }, []);
 
-  useEffect(() => {
+  const generateGreeting = useCallback(async () => {
     if (!name) return;
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        
-        // Fetch greeting
-        const greetingRes = await fetch("/api/generate-greeting", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        });
+    try {
+      setLoading(true);
+      setError("");
+      
+      // Fetch greeting
+      const greetingRes = await fetch("/api/generate-greeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
 
-        if (!greetingRes.ok) throw new Error("Failed to generate greeting");
-        const greetingData = await greetingRes.json();
-        setGreeting(greetingData);
+      if (!greetingRes.ok) throw new Error("Failed to generate greeting");
+      const greetingData = await greetingRes.json();
+      setGreeting(greetingData);
 
-      } catch (err) {
-        console.error(err);
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Something went wrong");
-        }
-      } finally {
-        setLoading(false);
+    } catch (err) {
+      console.error(err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong");
       }
-    };
-
-    fetchData();
+    } finally {
+      setLoading(false);
+    }
   }, [name]);
+
+  useEffect(() => {
+    generateGreeting();
+  }, [generateGreeting]);
 
   const handleDownload = async () => {
     if (!name || isDownloading || !greeting) return;
@@ -283,7 +284,7 @@ function CardContent() {
         </div>
 
         {/* Actions */}
-        <div className="mt-8 flex gap-4 justify-center relative z-20">
+        <div className="mt-8 flex flex-wrap gap-4 justify-center relative z-20">
           <button 
             onClick={handleDownload}
             disabled={isDownloading}
@@ -298,13 +299,23 @@ function CardContent() {
             )}
             {isDownloading ? "保存中..." : "保存贺卡"}
           </button>
+
           <button 
-            onClick={() => window.location.href = '/'}
+            onClick={generateGreeting}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
+          >
+            <Sparkles size={20} />
+            重新生成
+          </button>
+
+          <button 
+            onClick={() => router.push("/")}
             className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
           >
             <RefreshCw size={20} />
             再做一张
-          </button></div>
+          </button>
+        </div>
       </motion.div>
     </div>
   );

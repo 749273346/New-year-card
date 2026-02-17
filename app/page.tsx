@@ -1,23 +1,39 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function Home() {
   const [name, setName] = useState("");
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    router.prefetch("/card");
+  }, [router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      router.push(`/card?name=${encodeURIComponent(name)}`);
-    }
+    if (!name.trim() || isNavigating) return;
+
+    setIsNavigating(true);
+    (document.activeElement as HTMLElement | null)?.blur?.();
+
+    const url = `/card?name=${encodeURIComponent(name)}`;
+    requestAnimationFrame(() => router.push(url));
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-red-800 text-yellow-300 p-4">
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-900 text-yellow-300">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
+          <p className="text-xl animate-pulse">正在为您制作新年贺卡...</p>
+          <p className="text-sm opacity-70 mt-2">请稍候，即将进入贺卡页面</p>
+        </div>
+      )}
       <motion.h1 
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -48,9 +64,10 @@ export default function Home() {
         />
         <button
           type="submit"
+          disabled={isNavigating}
           className="mt-4 py-3 px-6 bg-yellow-500 hover:bg-yellow-400 text-red-900 font-bold rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95"
         >
-          生成我的贺卡
+          {isNavigating ? "正在进入..." : "生成我的贺卡"}
         </button>
       </motion.form>
       

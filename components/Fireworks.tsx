@@ -7,6 +7,8 @@ export default function Fireworks() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+
     // Play sound
     const audio = new Audio("/firework.mp3");
     audio.volume = 0.8;
@@ -14,7 +16,7 @@ export default function Fireworks() {
     audioRef.current = audio;
 
     // Handle loading errors
-    audio.addEventListener('error', (e) => {
+    audio.addEventListener('error', () => {
       // console.warn("Audio load error", e);
     });
     
@@ -29,6 +31,7 @@ export default function Fireworks() {
     }
 
     const duration = 15 * 1000;
+    const isSmallScreen = window.innerWidth < 420;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
@@ -47,11 +50,12 @@ export default function Fireworks() {
         return clearInterval(interval);
       }
 
-      const particleCount = 50 * (timeLeft / duration);
+      const baseCount = isSmallScreen ? 26 : 50;
+      const particleCount = baseCount * (timeLeft / duration);
       // since particles fall down, start a bit higher than random
       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-    }, 250);
+    }, isSmallScreen ? 400 : 250);
 
     return () => {
         clearInterval(interval);
