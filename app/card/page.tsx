@@ -57,15 +57,53 @@ function CardContent() {
         setLoading(true);
         setError("");
 
-        const greetingRes = await fetch("/api/generate-greeting", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-          signal: controller.signal,
-        });
+        const fetchViaPost = async () => {
+          const res = await fetch("/api/generate-greeting", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+            cache: "no-store",
+            signal: controller.signal,
+          });
 
-        if (!greetingRes.ok) throw new Error("Failed to generate greeting");
-        const greetingData = await greetingRes.json();
+          if (!res.ok) {
+            let serverMessage = "";
+            try {
+              const data = (await res.json()) as { error?: string };
+              if (typeof data?.error === "string") serverMessage = data.error;
+            } catch {}
+            throw new Error(serverMessage || `生成失败 (${res.status})`);
+          }
+
+          return (await res.json()) as { poem: string[]; wish: string };
+        };
+
+        const fetchViaGet = async () => {
+          const res = await fetch(`/api/generate-greeting?name=${encodeURIComponent(name)}`, {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal,
+          });
+
+          if (!res.ok) {
+            let serverMessage = "";
+            try {
+              const data = (await res.json()) as { error?: string };
+              if (typeof data?.error === "string") serverMessage = data.error;
+            } catch {}
+            throw new Error(serverMessage || `生成失败 (${res.status})`);
+          }
+
+          return (await res.json()) as { poem: string[]; wish: string };
+        };
+
+        let greetingData: { poem: string[]; wish: string };
+        try {
+          greetingData = await fetchViaPost();
+        } catch (postErr) {
+          if (postErr instanceof Error && postErr.name === "AbortError") return;
+          greetingData = await fetchViaGet();
+        }
         if (controller.signal.aborted) return;
         setGreeting(greetingData);
       } catch (err) {
