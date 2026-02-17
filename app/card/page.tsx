@@ -237,7 +237,13 @@ function CardContent() {
       }
 
       const filename = `${name}-NewYearCard.png`;
-      const preferPreview = isMobile || isWeChat;
+      
+      // Check environment at runtime to ensure latest detection
+      const currentUA = window.navigator.userAgent;
+      const isMobileClick = /Android|iPhone|iPad|iPod|Mobi/i.test(currentUA);
+      const isWeChatClick = /MicroMessenger/i.test(currentUA);
+      const isSmallScreen = window.innerWidth < 1024; // Treat tablets as mobile
+      const preferPreview = isMobileClick || isWeChatClick || isSmallScreen;
 
       if (preferPreview) {
         const dataUrl = await blobToDataUrl(blob);
@@ -365,7 +371,7 @@ function CardContent() {
           
           <div className="fixed bottom-8 left-0 right-0 flex flex-col items-center gap-4 z-50 pointer-events-none">
              <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-auto animate-bounce">
-               长按图片保存到相册
+               长按即可保存
              </div>
              <button
               onClick={() => {
