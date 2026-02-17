@@ -9,7 +9,13 @@ export default function Home() {
   const [name, setName] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
-  const isWeChat = typeof navigator !== "undefined" && /MicroMessenger/i.test(navigator.userAgent);
+  const [isWeChat, setIsWeChat] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && /MicroMessenger/i.test(navigator.userAgent)) {
+      setIsWeChat(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (isWeChat) return;

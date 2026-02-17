@@ -16,7 +16,14 @@ function CardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const name = searchParams.get("name");
-  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  
+  const [userAgent, setUserAgent] = useState("");
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setUserAgent(navigator.userAgent);
+    }
+  }, []);
+
   const isMobile = /Android|iPhone|iPad|iPod|Mobi/i.test(userAgent);
   const isWeChat = /MicroMessenger/i.test(userAgent);
   const lowPowerMode = isWeChat;
