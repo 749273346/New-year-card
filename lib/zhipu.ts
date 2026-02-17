@@ -81,7 +81,7 @@ export async function generateImage(prompt: string) {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "glm-image", // or cogview-3-flash as per docs if needed, but glm-image is standard
+      model: "cogview-4-250304", 
       prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。`,
       size: "1024x1024", // Standard size
     }),
