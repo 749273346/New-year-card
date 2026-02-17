@@ -520,7 +520,7 @@ function CardContent() {
             {/* Footer */}
             <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
               <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted}`}>
-                汕头水电车间 · 智轨先锋组
+                汕头水电车间 · 智轨先锋组 v1.2
               </div>
             </div>
           </div>

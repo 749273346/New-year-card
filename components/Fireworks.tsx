@@ -7,14 +7,19 @@ export default function Fireworks() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    const isWeChatWebView = () => {
+      if (typeof navigator === "undefined") return false;
+      return /MicroMessenger/i.test(navigator.userAgent);
+    };
+
+    if (isWeChatWebView() || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
 
     const handleFirstInteraction = () => {
       if (audioRef.current) return;
 
       const audio = new Audio("/firework.mp3");
       audio.volume = 0.8;
-      audio.loop = true;
+      audio.loop = true; // Set loop to true initially
       audioRef.current = audio;
 
       const playPromise = audio.play();
@@ -27,10 +32,23 @@ export default function Fireworks() {
       }
     };
 
-    document.addEventListener("pointerdown", handleFirstInteraction, { once: true });
+    // Auto play if possible, otherwise wait for interaction
+    const audio = new Audio("/firework.mp3");
+    audio.volume = 0.8;
+    audio.loop = true;
+    audioRef.current = audio;
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // If autoplay blocked, wait for interaction
+        audioRef.current = null; // Reset
+        document.addEventListener("pointerdown", handleFirstInteraction, { once: true });
+      });
+    }
 
-    const duration = 15 * 1000;
     const isSmallScreen = window.innerWidth < 420;
+    const duration = 15 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
@@ -42,9 +60,17 @@ export default function Fireworks() {
       if (timeLeft <= 0) {
         // Stop sound when animation ends
         if (audioRef.current) {
-            // Fade out effect could be nice, but for now just pause
-            audioRef.current.pause();
-            audioRef.current = null;
+           const fadeAudio = setInterval(() => {
+              if (audioRef.current && audioRef.current.volume > 0.1) {
+                  audioRef.current.volume -= 0.1;
+              } else {
+                  clearInterval(fadeAudio);
+                  if (audioRef.current) {
+                      audioRef.current.pause();
+                      audioRef.current = null;
+                  }
+              }
+           }, 100);
         }
         return clearInterval(interval);
       }
