@@ -3,7 +3,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useState, useRef, Suspense, useCallback } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import * as htmlToImage from "html-to-image";
@@ -48,39 +48,42 @@ function CardContent() {
     setTheme(getRandomTheme());
   }, []);
 
-  const generateGreeting = useCallback(async () => {
-    if (!name) return;
-
-    try {
-      setLoading(true);
-      setError("");
-      
-      // Fetch greeting
-      const greetingRes = await fetch("/api/generate-greeting", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-
-      if (!greetingRes.ok) throw new Error("Failed to generate greeting");
-      const greetingData = await greetingRes.json();
-      setGreeting(greetingData);
-
-    } catch (err) {
-      console.error(err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Something went wrong");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [name]);
-
   useEffect(() => {
-    generateGreeting();
-  }, [generateGreeting]);
+    if (!name) return;
+    const controller = new AbortController();
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const greetingRes = await fetch("/api/generate-greeting", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+          signal: controller.signal,
+        });
+
+        if (!greetingRes.ok) throw new Error("Failed to generate greeting");
+        const greetingData = await greetingRes.json();
+        if (controller.signal.aborted) return;
+        setGreeting(greetingData);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        console.error(err);
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Something went wrong");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void run();
+    return () => controller.abort();
+  }, [name]);
 
   const blobToDataUrl = (blob: Blob) =>
     new Promise<string>((resolve, reject) => {
@@ -120,6 +123,7 @@ function CardContent() {
           cacheBust: true,
           pixelRatio: isWeChat ? 1.5 : (isMobile ? 2 : 2),
           style: { transform: 'none' }, // Ensure no transforms affect the capture
+          fetchRequestInit: { mode: "cors" },
         });
       } catch (e) {
         console.warn("High quality capture failed:", e);
@@ -132,6 +136,7 @@ function CardContent() {
             cacheBust: true,
             pixelRatio: 1.5,
             style: { transform: 'none' },
+            fetchRequestInit: { mode: "cors" },
           });
         } catch (e) {
           console.warn("Medium quality capture failed:", e);
@@ -145,6 +150,7 @@ function CardContent() {
             cacheBust: false,
             pixelRatio: 1,
             style: { transform: 'none' },
+            fetchRequestInit: { mode: "cors" },
           });
         } catch (e) {
           console.error("Low quality capture failed:", e);
@@ -157,6 +163,7 @@ function CardContent() {
              const dataUrl = await htmlToImage.toPng(element, {
                 cacheBust: false,
                 pixelRatio: 1,
+                fetchRequestInit: { mode: "cors" },
              });
              const res = await fetch(dataUrl);
              blob = await res.blob();
@@ -564,6 +571,13 @@ function CardContent() {
               再做一张
             </button>
           </div>
+        </div>
+      )}
+      {isDownloading && (
+        <div className="fixed inset-0 z-[300] bg-black/80 flex flex-col items-center justify-center text-white backdrop-blur-sm">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-6"></div>
+          <p className="text-xl font-bold tracking-widest animate-pulse">正在精心绘制贺卡...</p>
+          <p className="text-sm opacity-70 mt-2">请稍候，精彩即将呈现</p>
         </div>
       )}
     </div>
