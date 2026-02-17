@@ -9,7 +9,7 @@ import * as htmlToImage from "html-to-image";
 import { Download, RefreshCw, Home } from "lucide-react";
 import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
-import { getRandomBuiltinBackground } from "@/lib/backgrounds";
+import { getRandomBuiltinBackground, saveBackgroundToLocal } from "@/lib/backgrounds";
 
 const Fireworks = dynamic(() => import("@/components/Fireworks"), { ssr: false });
 
@@ -66,6 +66,20 @@ function CardContent() {
       try {
         setLoading(true);
         setError("");
+        
+        const normalizePoem = (input: unknown): string[] => {
+          if (Array.isArray(input)) {
+            return input.flatMap(line => {
+               if (typeof line === 'string' && line.length > 10 && /[，。！？；,.;!?]/.test(line)) {
+                 return line.split(/[，。！？；,.;!?]/).map(s => s.trim()).filter(s => s.length > 0);
+               }
+               return typeof line === 'string' ? [line] : [];
+            });
+          } else if (typeof input === 'string') {
+             return input.split(/[，。！？；,.;!?\n]/).map(s => s.trim()).filter(s => s.length > 0);
+          }
+          return [];
+        };
 
         const fetchViaPost = async () => {
           // console.log("Attempting POST request...");
@@ -89,7 +103,8 @@ function CardContent() {
             throw new Error(serverMessage || `生成失败 (${res.status})`);
           }
 
-          return (await res.json()) as { poem: string[]; wish: string };
+          const data = (await res.json()) as { poem: string[] | string; wish: string };
+          return { ...data, poem: normalizePoem(data.poem) };
         };
 
         const fetchViaGet = async () => {
@@ -112,7 +127,8 @@ function CardContent() {
             throw new Error(serverMessage || `生成失败 (${res.status})`);
           }
 
-          return (await res.json()) as { poem: string[]; wish: string };
+          const data = (await res.json()) as { poem: string[] | string; wish: string };
+          return { ...data, poem: normalizePoem(data.poem) };
         };
 
         let greetingData: { poem: string[]; wish: string } | undefined;
@@ -167,6 +183,12 @@ function CardContent() {
         }
         if (generatedImageUrl) {
             setBgImageUrl(generatedImageUrl);
+            // Save the generated background to local storage for use on the home page
+            try {
+              saveBackgroundToLocal(generatedImageUrl);
+            } catch (e) {
+              console.warn("Failed to save background to local:", e);
+            }
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;

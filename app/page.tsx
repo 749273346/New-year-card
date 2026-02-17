@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { HORSE_BACKGROUNDS, getNextBuiltinBackground } from "@/lib/backgrounds";
+import { HORSE_BACKGROUNDS, getRandomBuiltinBackground, getCombinedBackgrounds } from "@/lib/backgrounds";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -49,9 +49,13 @@ export default function Home() {
 
   const loadBackground = useCallback(async (preferred?: string) => {
     const requestId = ++bgRequestIdRef.current;
+    
+    // Get all available backgrounds (from pool)
+    const allBackgrounds = getCombinedBackgrounds();
+    
     const candidates = preferred
-      ? [preferred, ...HORSE_BACKGROUNDS.filter((u) => u !== preferred)]
-      : HORSE_BACKGROUNDS;
+      ? [preferred, ...allBackgrounds.filter((u) => u !== preferred)]
+      : allBackgrounds;
 
     for (const url of candidates) {
       const ok = await preloadImage(url);
@@ -63,24 +67,24 @@ export default function Home() {
     }
 
     if (requestId === bgRequestIdRef.current) {
-      setBgImageUrl(HORSE_BACKGROUNDS[0]);
+      // Fallback to the first available in pool or first builtin
+      setBgImageUrl(allBackgrounds[0] || HORSE_BACKGROUNDS[0]);
     }
   }, [preloadImage]);
 
   useEffect(() => {
-    setTimeout(() => {
-      loadBackground(bgCurrentRef.current);
+    // Initial random background load
+    // We use a timeout to ensure this runs after mount and initial render
+    const timer = setTimeout(() => {
+      loadBackground(getRandomBuiltinBackground());
     }, 0);
-
-    const interval = setInterval(() => {
-      loadBackground(getNextBuiltinBackground(bgCurrentRef.current));
-    }, 8000);
-
-    return () => clearInterval(interval);
+    
+    return () => clearTimeout(timer);
   }, [loadBackground]);
 
   const handleBgError = useCallback(() => {
-    loadBackground(getNextBuiltinBackground(bgCurrentRef.current));
+    // If current background fails, try another random one
+    loadBackground(getRandomBuiltinBackground());
   }, [loadBackground]);
 
   useEffect(() => {

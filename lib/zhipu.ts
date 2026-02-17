@@ -54,6 +54,70 @@ export async function generateImage(prompt: string) {
   }
 }
 
+// Helper to normalize poem
+const normalizePoem = (rawPoem: unknown): string[] => {
+  let lines: string[] = [];
+  
+  if (Array.isArray(rawPoem)) {
+    // Flatten any nested arrays or split strings within the array
+    lines = rawPoem.flatMap(item => {
+      if (typeof item === 'string') {
+        // Split by common sentence delimiters if the line is too long or contains delimiters
+        // But be careful not to split unnecessarily. 
+        // A standard 7-char line is short. If it's > 10 chars and contains delimiters, split it.
+        if (item.length > 10 && /[，。！？；,.;!?]/.test(item)) {
+           return item.split(/[，。！？；,.;!?]/).map(s => s.trim()).filter(s => s.length > 0);
+        }
+        return [item.trim()];
+      }
+      return [];
+    });
+  } else if (typeof rawPoem === 'string') {
+    // Split string by delimiters
+    lines = rawPoem.split(/[，。！？；,.;!?\n]/).map(s => s.trim()).filter(s => s.length > 0);
+  }
+  
+  // Fallback if empty
+  if (lines.length === 0) {
+    return [
+      "铁龙飞驰贯九州",
+      "马蹄声碎志未休",
+      "复兴号角催春意",
+      "万里坦途展宏图"
+    ];
+  }
+  
+  return lines;
+};
+
+// Helper to safely parse greeting JSON
+const parseGreetingContent = (content: string, name: string) => {
+  try {
+    const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(jsonStr);
+    parsed.poem = normalizePoem(parsed.poem);
+    return parsed;
+  } catch {
+    console.warn("Failed to parse LLM response as JSON:", content);
+    const lines = content.split(/[\n，。！？；,.;!?]/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length >= 4) {
+      return {
+        poem: lines.slice(0, 4),
+        wish: lines.slice(4).join(" ") || `祝${name}新年快乐！`
+      };
+    }
+    return {
+      poem: [
+        "铁龙飞驰贯九州",
+        "马蹄声碎志未休",
+        "复兴号角催春意",
+        "万里坦途展宏图"
+      ],
+      wish: `祝${name}新年快乐，万事如意！`
+    };
+  }
+};
+
 export async function generateGreeting(name: string) {
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
   const zhipuApiKey = process.env.ZHIPU_API_KEY;
@@ -119,7 +183,7 @@ ${referencePrompt}
 
       const data = await response.json();
       const content = data.choices[0].message.content;
-      return JSON.parse(content);
+      return parseGreetingContent(content, name);
     } catch (error) {
       console.error("DeepSeek generation failed, falling back...", error);
       // Fallback logic continues below
@@ -176,15 +240,5 @@ ${referencePrompt}
   const data = await response.json();
   const content = data.choices[0].message.content;
   
-  // Try to parse JSON from the content if the model returns markdown code block
-  try {
-    const jsonStr = content.replace(/```json\n|\n```/g, "").trim();
-    return JSON.parse(jsonStr);
-  } catch {
-    // Fallback if not valid JSON
-    return {
-      poem: content.split("\n").filter((line: string) => line.trim()),
-      wish: "新年快乐！"
-    };
-  }
+  return parseGreetingContent(content, name);
 }
