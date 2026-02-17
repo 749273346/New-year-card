@@ -345,6 +345,13 @@ function CardContent() {
      }
   };
 
+  // Helper to proxy images
+  const getProxyUrl = (url: string) => {
+    if (!url) return url;
+    if (url.startsWith("data:") || url.startsWith("/")) return url;
+    return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  };
+
   if (!name) {
     return <div className="text-white text-center mt-20">Please provide a name.</div>;
   }
@@ -494,12 +501,13 @@ function CardContent() {
             {/* Card Texture & Decor */}
             {/* AI Generated Background */}
             {bgImageUrl ? (
-               <div 
-                 className="absolute inset-0 z-0 !opacity-100"
+               // eslint-disable-next-line @next/next/no-img-element
+               <img 
+                 src={getProxyUrl(bgImageUrl)}
+                 alt="Background"
+                 crossOrigin="anonymous"
+                 className="absolute inset-0 z-0 w-full h-full object-cover !opacity-100"
                  style={{ 
-                   backgroundImage: `url('${bgImageUrl}')`,
-                   backgroundSize: 'cover',
-                   backgroundPosition: 'center',
                    opacity: 1,
                    mixBlendMode: 'overlay'
                  }} 
@@ -706,12 +714,13 @@ function CardContent() {
 
             {/* AI Generated Background for Capture Mode */}
             {bgImageUrl ? (
-               <div 
-                 className="absolute inset-0 z-0 pointer-events-none !opacity-100"
+               // eslint-disable-next-line @next/next/no-img-element
+               <img 
+                 src={getProxyUrl(bgImageUrl)}
+                 alt="Background"
+                 crossOrigin="anonymous"
+                 className="absolute inset-0 z-0 w-full h-full object-cover pointer-events-none !opacity-100"
                  style={{ 
-                   backgroundImage: `url('${bgImageUrl}')`,
-                   backgroundSize: 'cover',
-                   backgroundPosition: 'center',
                    opacity: 1,
                    mixBlendMode: 'overlay' 
                  }} 

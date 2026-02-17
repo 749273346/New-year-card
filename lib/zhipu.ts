@@ -34,8 +34,8 @@ export async function generateImage(prompt: string) {
       },
       body: JSON.stringify({
         model: "cogview-4-250304", 
-        prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。`,
-        size: "1024x1024", // Standard size
+        prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。请确保主体位于画面中心，保留完整头部，周围留白，广角视角。`,
+        size: "768x1344", // Vertical aspect ratio for mobile
       }),
     });
 
