@@ -9,26 +9,25 @@ export default function Fireworks() {
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
 
-    // Play sound
-    const audio = new Audio("/firework.mp3");
-    audio.volume = 0.8;
-    audio.loop = true; 
-    audioRef.current = audio;
+    const handleFirstInteraction = () => {
+      if (audioRef.current) return;
 
-    // Handle loading errors
-    audio.addEventListener('error', () => {
-      // console.warn("Audio load error", e);
-    });
-    
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((e) => {
-        // Ignore AbortError which happens if component unmounts quickly
-        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
-           console.warn("Audio play failed", e);
-        }
-      });
-    }
+      const audio = new Audio("/firework.mp3");
+      audio.volume = 0.8;
+      audio.loop = true;
+      audioRef.current = audio;
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => {
+          if (e.name !== "AbortError" && e.name !== "NotAllowedError") {
+            console.warn("Audio play failed", e);
+          }
+        });
+      }
+    };
+
+    document.addEventListener("pointerdown", handleFirstInteraction, { once: true });
 
     const duration = 15 * 1000;
     const isSmallScreen = window.innerWidth < 420;
@@ -59,6 +58,7 @@ export default function Fireworks() {
 
     return () => {
         clearInterval(interval);
+        document.removeEventListener("pointerdown", handleFirstInteraction);
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current = null;

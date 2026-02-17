@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { Download, RefreshCw, Sparkles } from "lucide-react";
+import * as htmlToImage from "html-to-image";
+import { Download, RefreshCw } from "lucide-react";
 import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
 
@@ -20,6 +21,7 @@ function CardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [theme, setTheme] = useState<CardTheme>(themes[0]); // Default theme
   const [showFireworks, setShowFireworks] = useState(false);
 
@@ -73,33 +75,36 @@ function CardContent() {
   }, [generateGreeting]);
 
   const handleDownload = async () => {
-    if (!name || isDownloading || !greeting) return;
+    if (!name || isDownloading || !greeting || !cardRef.current) return;
     
     try {
       setIsDownloading(true);
+      setIsCapturing(true);
 
-      const params = new URLSearchParams({
-        name: name,
-        poem: JSON.stringify(greeting.poem),
-        wish: greeting.wish,
-        themeId: theme.id,
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready;
+      await new Promise(resolve => setTimeout(resolve, 80));
+
+      const blob = await htmlToImage.toBlob(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
       });
 
-      const response = await fetch(`/api/card-image?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to generate image");
-      
-      const blob = await response.blob();
+      if (!blob) {
+        throw new Error("Failed to generate image blob");
+      }
+
       const filename = `${name}-NewYearCard.png`;
       const file = new File([blob], filename, { type: "image/png" });
 
-      const nav = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-        share?: (data: ShareData) => Promise<void>;
-      };
-
-      if (nav.share && nav.canShare?.({ files: [file] })) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          await nav.share({ files: [file], title: filename });
+          await navigator.share({
+            files: [file],
+            title: "新年贺卡",
+            text: `来自${name}的新年祝福`,
+          });
           return;
         } catch (shareError) {
           console.warn("Share failed or cancelled, falling back to download:", shareError);
@@ -124,8 +129,9 @@ function CardContent() {
        alert("保存图片失败，请尝试长按截图保存");
      } finally {
        setIsDownloading(false);
+       setIsCapturing(false);
      }
-   };
+  };
 
   if (!name) {
     return <div className="text-white text-center mt-20">Please provide a name.</div>;
@@ -254,35 +260,53 @@ function CardContent() {
               
               <div className={`space-y-4 font-serif text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
                 {greeting?.poem.map((line, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1.0 + index * 0.4 }}
-                    className="flex items-center justify-center gap-2"
-                  >
+                  isCapturing ? (
+                    <div key={index} className="flex items-center justify-center gap-2">
+                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
+                      <p className="tracking-[0.15em]">{line}</p>
+                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
+                    </div>
+                  ) : (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.0 + index * 0.4 }}
+                      className="flex items-center justify-center gap-2"
+                    >
                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
                      <p className="tracking-[0.15em]">{line}</p>
                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
-                  </motion.div>
+                    </motion.div>
+                  )
                 ))}
               </div>
 
               {/* Wish Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.8 }}
-                className="relative w-full"
-              >
-                <div className={`relative px-6 py-5 border-t border-b backdrop-blur-sm ${theme.highlightBg} ${theme.borderColor}`}>
+              {isCapturing ? (
+                <div className="relative w-full">
+                  <div className={`relative px-6 py-5 border-t border-b ${theme.highlightBg} ${theme.borderColor}`}>
+                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
+                      {greeting && name && renderWishWithBoldName(greeting.wish, name)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 2.8 }}
+                  className="relative w-full"
+                >
+                  <div className={`relative px-6 py-5 border-t border-b backdrop-blur-sm ${theme.highlightBg} ${theme.borderColor}`}>
                   {/* Decorative quotes - Removed */}
                    
                   <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
                     {greeting && name && renderWishWithBoldName(greeting.wish, name)}
                   </p>
                 </div>
-              </motion.div>
+                </motion.div>
+              )}
             </div>
 
             {/* Footer */}
@@ -309,14 +333,6 @@ function CardContent() {
               <Download size={20} />
             )}
             {isDownloading ? "保存中..." : "保存贺卡"}
-          </button>
-
-          <button 
-            onClick={generateGreeting}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
-          >
-            <Sparkles size={20} />
-            重新生成
           </button>
 
           <button 
