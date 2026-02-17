@@ -36,7 +36,7 @@ async function loadGoogleFont(font: string, text: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('Generating card image...');
+    // console.log('Generating card image...');
     const { searchParams } = new URL(req.url);
     const name = searchParams.get('name') || '朋友';
     const poemRaw = searchParams.get('poem');

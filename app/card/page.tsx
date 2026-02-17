@@ -6,7 +6,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import * as htmlToImage from "html-to-image";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, Home } from "lucide-react";
 import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
 import { getRandomBuiltinBackground } from "@/lib/backgrounds";
@@ -68,7 +68,7 @@ function CardContent() {
         setError("");
 
         const fetchViaPost = async () => {
-          console.log("Attempting POST request...");
+          // console.log("Attempting POST request...");
           const res = await fetch("/api/generate-greeting", {
             method: "POST",
             headers: { 
@@ -93,7 +93,7 @@ function CardContent() {
         };
 
         const fetchViaGet = async () => {
-          console.log("Attempting GET fallback...");
+          // console.log("Attempting GET fallback...");
           const res = await fetch(`/api/generate-greeting?name=${encodeURIComponent(name)}`, {
             method: "GET",
             headers: {
@@ -131,7 +131,7 @@ function CardContent() {
           })(),
           (async () => {
             try {
-              console.log("Requesting AI background image...");
+              // console.log("Requesting AI background image...");
               const res = await fetch("/api/generate-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -465,6 +465,14 @@ function CardContent() {
               <RefreshCw size={18} />
               返回修改
             </button>
+
+            <button
+              onClick={() => router.push("/")}
+              className="pointer-events-auto bg-zinc-800 text-white border border-zinc-600 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-zinc-700 transition active:scale-95 flex items-center gap-2"
+            >
+              <Home size={18} />
+              再次制作
+            </button>
           </div>
         </div>
       </div>
@@ -638,15 +646,18 @@ function CardContent() {
             ) : (
               <Download size={20} />
             )}
-            {isDownloading ? "保存中..." : "保存贺卡"}
+            {isDownloading ? "正在生成..." : "保存贺卡"}
           </button>
 
-          <button 
+          <button
             onClick={() => router.push("/")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
+            disabled={isDownloading}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition transform active:scale-95 hover:scale-105 ${theme.buttonSecondary} ${
+              isDownloading ? "cursor-not-allowed opacity-80" : ""
+            }`}
           >
-            <RefreshCw size={20} />
-            再做一张
+            <Home size={20} />
+            再次制作
           </button>
         </div>
         </motion.div>
@@ -756,10 +767,13 @@ function CardContent() {
 
             <button 
               onClick={() => router.push("/")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
+              disabled={isDownloading}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition transform active:scale-95 hover:scale-105 ${theme.buttonSecondary} ${
+                isDownloading ? "cursor-not-allowed opacity-80" : ""
+              }`}
             >
-              <RefreshCw size={20} />
-              再做一张
+              <Home size={20} />
+              再次制作
             </button>
           </div>
         </div>

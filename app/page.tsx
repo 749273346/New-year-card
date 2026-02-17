@@ -1,47 +1,87 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { getRandomBuiltinBackground, saveBackgroundToLocal } from "@/lib/backgrounds";
+import { HORSE_BACKGROUNDS, getNextBuiltinBackground } from "@/lib/backgrounds";
 
 export default function Home() {
   const [name, setName] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const [isWeChat, setIsWeChat] = useState(false);
-  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+  const [bgImageUrl, setBgImageUrl] = useState<string>(() => HORSE_BACKGROUNDS[0]);
+  const bgRequestIdRef = useRef(0);
+  const bgCurrentRef = useRef<string>(HORSE_BACKGROUNDS[0]);
 
   useEffect(() => {
-    // Initialize with a built-in background immediately
-    const initialBg = getRandomBuiltinBackground();
-    setBgImageUrl(initialBg);
+    bgCurrentRef.current = bgImageUrl;
+  }, [bgImageUrl]);
 
-    // Try to fetch a new AI background in the background
-    const fetchBg = async () => {
-      try {
-        const res = await fetch("/api/generate-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            prompt: "一匹神采奕奕的骏马，奔腾，中国新年风格，红金色调，喜庆，高品质，艺术感，背景壁纸" 
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.imageUrl) {
-            setBgImageUrl(data.imageUrl);
-            // Save the new high-quality AI image to local storage for future use
-            saveBackgroundToLocal(data.imageUrl);
-          }
-        }
-      } catch (e) {
-        console.warn("Home background generation failed, keeping built-in:", e);
-      }
-    };
-    fetchBg();
+  const preloadImage = useCallback((url: string) => {
+    if (typeof window === "undefined") return Promise.resolve(false);
+    return new Promise<boolean>((resolve) => {
+      const img = new window.Image();
+      let done = false;
+      const finish = (ok: boolean) => {
+        if (done) return;
+        done = true;
+        img.onload = null;
+        img.onerror = null;
+        resolve(ok);
+      };
+      const timer = window.setTimeout(() => finish(false), 4500);
+      img.onload = () => {
+        window.clearTimeout(timer);
+        finish(true);
+      };
+      img.onerror = () => {
+        window.clearTimeout(timer);
+        finish(false);
+      };
+      img.decoding = "async";
+      img.referrerPolicy = "no-referrer";
+      img.src = url;
+    });
   }, []);
+
+  const loadBackground = useCallback(async (preferred?: string) => {
+    const requestId = ++bgRequestIdRef.current;
+    const candidates = preferred
+      ? [preferred, ...HORSE_BACKGROUNDS.filter((u) => u !== preferred)]
+      : HORSE_BACKGROUNDS;
+
+    for (const url of candidates) {
+      const ok = await preloadImage(url);
+      if (requestId !== bgRequestIdRef.current) return;
+      if (ok) {
+        setBgImageUrl(url);
+        return;
+      }
+    }
+
+    if (requestId === bgRequestIdRef.current) {
+      setBgImageUrl(HORSE_BACKGROUNDS[0]);
+    }
+  }, [preloadImage]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      loadBackground(bgCurrentRef.current);
+    }, 0);
+
+    const interval = setInterval(() => {
+      loadBackground(getNextBuiltinBackground(bgCurrentRef.current));
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [loadBackground]);
+
+  const handleBgError = useCallback(() => {
+    loadBackground(getNextBuiltinBackground(bgCurrentRef.current));
+  }, [loadBackground]);
 
   useEffect(() => {
     // 客户端检测微信环境，避免服务端渲染 hydration mismatch
@@ -76,15 +116,21 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-red-800 text-yellow-300 p-4 relative overflow-hidden">
       {/* Dynamic Background */}
       {bgImageUrl && (
-        <div 
+        <Image
+          src={bgImageUrl}
+          alt=""
+          onError={handleBgError}
+          fill
+          priority
+          unoptimized
+          sizes="100vw"
           className="absolute inset-0 z-0"
-          style={{ 
-            backgroundImage: `url('${bgImageUrl}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+          style={{
+            objectFit: "cover",
             opacity: 0.6,
-            mixBlendMode: 'overlay'
-          }} 
+            mixBlendMode: "overlay",
+          }}
+          draggable={false}
         />
       )}
       
@@ -92,16 +138,22 @@ export default function Home() {
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-red-900/90 text-yellow-300 backdrop-blur-md">
           {/* Reuse background for continuity */}
           {bgImageUrl && (
-             <div 
-               className="absolute inset-0 z-[-1]"
-               style={{ 
-                 backgroundImage: `url('${bgImageUrl}')`,
-                 backgroundSize: 'cover',
-                 backgroundPosition: 'center',
-                 opacity: 0.4,
-                 filter: 'blur(8px)'
-               }} 
-             />
+            <Image
+              src={bgImageUrl}
+              alt=""
+              onError={handleBgError}
+              fill
+              priority
+              unoptimized
+              sizes="100vw"
+              className="absolute inset-0 z-[-1]"
+              style={{
+                objectFit: "cover",
+                opacity: 0.4,
+                filter: "blur(8px)",
+              }}
+              draggable={false}
+            />
           )}
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4 z-10"></div>
           <p className="text-xl animate-pulse font-bold z-10">正在为您制作贺卡...</p>
@@ -177,11 +229,11 @@ export default function Home() {
         </motion.form>
       )}
       
+    </div>
       <div className="absolute bottom-4 text-xs text-yellow-500/50 flex items-center justify-center gap-2 z-10">
         <span>汕头水电车间 智轨先锋组</span>
         <span className="opacity-80 font-sans bg-black/10 px-1 rounded text-[10px]">v1.3</span>
       </div>
-    </div>
     </div>
   );
 }
