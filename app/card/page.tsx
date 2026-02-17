@@ -9,6 +9,7 @@ import * as htmlToImage from "html-to-image";
 import { Download, RefreshCw } from "lucide-react";
 import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
+import { getRandomBuiltinBackground } from "@/lib/backgrounds";
 
 const Fireworks = dynamic(() => import("@/components/Fireworks"), { ssr: false });
 
@@ -30,7 +31,8 @@ function CardContent() {
   const lowPowerMode = isWeChat;
   
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
-  const [bgImageUrl, setBgImageUrl] = useState<string | null>(initialBgUrl);
+  // Initialize with passed background OR a random built-in one (fallback for first load/direct access)
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(initialBgUrl || getRandomBuiltinBackground());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -349,12 +351,12 @@ function CardContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300 relative overflow-hidden">
-         {/* Use passed background if available */}
-         {initialBgUrl && (
+         {/* Use passed/builtin background */}
+         {bgImageUrl && (
             <div 
               className="absolute inset-0 z-0"
               style={{ 
-                backgroundImage: `url('${initialBgUrl}')`,
+                backgroundImage: `url('${bgImageUrl}')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 opacity: 0.4,

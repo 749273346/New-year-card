@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { getRandomBuiltinBackground } from "@/lib/backgrounds";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -13,7 +14,11 @@ export default function Home() {
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Generate random horse background on mount
+    // Initialize with a built-in background immediately
+    const initialBg = getRandomBuiltinBackground();
+    setBgImageUrl(initialBg);
+
+    // Try to fetch a new AI background in the background
     const fetchBg = async () => {
       try {
         const res = await fetch("/api/generate-image", {
@@ -28,7 +33,7 @@ export default function Home() {
           if (data.imageUrl) setBgImageUrl(data.imageUrl);
         }
       } catch (e) {
-        console.warn("Home background generation failed:", e);
+        console.warn("Home background generation failed, keeping built-in:", e);
       }
     };
     fetchBg();
