@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 export default function MusicPlayer() {
   const isWeChat = typeof navigator !== "undefined" && /MicroMessenger/i.test(navigator.userAgent);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -47,7 +47,8 @@ export default function MusicPlayer() {
     audio.addEventListener("error", handleError);
 
     tryPlay().catch(() => {
-      setIsPlaying(false);
+      // Keep isPlaying as true to indicate intention to play
+      // setIsPlaying(false); 
       const onFirstInteraction = () => {
         tryPlay().catch(() => {});
         window.removeEventListener("pointerdown", onFirstInteraction);
