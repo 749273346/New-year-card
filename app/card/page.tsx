@@ -495,13 +495,13 @@ function CardContent() {
             {/* AI Generated Background */}
             {bgImageUrl ? (
                <div 
-                 className="absolute inset-0 z-0"
+                 className="absolute inset-0 z-0 !opacity-100"
                  style={{ 
                    backgroundImage: `url('${bgImageUrl}')`,
                    backgroundSize: 'cover',
                    backgroundPosition: 'center',
-                   opacity: 0.8,
-                   mixBlendMode: 'overlay' 
+                   opacity: 1,
+                   mixBlendMode: 'overlay'
                  }} 
                />
             ) : (
@@ -707,12 +707,12 @@ function CardContent() {
             {/* AI Generated Background for Capture Mode */}
             {bgImageUrl ? (
                <div 
-                 className="absolute inset-0 z-0 pointer-events-none"
+                 className="absolute inset-0 z-0 pointer-events-none !opacity-100"
                  style={{ 
                    backgroundImage: `url('${bgImageUrl}')`,
                    backgroundSize: 'cover',
                    backgroundPosition: 'center',
-                   opacity: 0.8,
+                   opacity: 1,
                    mixBlendMode: 'overlay' 
                  }} 
                />
