@@ -29,6 +29,7 @@ function CardContent() {
   const lowPowerMode = isWeChat;
   
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -112,23 +113,57 @@ function CardContent() {
         };
 
         let greetingData: { poem: string[]; wish: string } | undefined;
-        try {
-          greetingData = await fetchViaPost();
-        } catch (postErr) {
-          console.warn("POST request failed:", postErr);
-          if (postErr instanceof Error && postErr.name === "AbortError") return;
-          try {
-            greetingData = await fetchViaGet();
-          } catch (getErr) {
-             console.warn("GET request failed:", getErr);
-             if (getErr instanceof Error && getErr.name === "AbortError") return;
-             throw getErr; // Throw the GET error to be caught by outer block
-          }
+        let generatedImageUrl: string | null = null;
+
+        // Execute both requests in parallel
+        const [greetingResult, imageResult] = await Promise.allSettled([
+          (async () => {
+            try {
+              return await fetchViaPost();
+            } catch (postErr) {
+              console.warn("POST greeting failed:", postErr);
+              if (postErr instanceof Error && postErr.name === "AbortError") throw postErr;
+              return await fetchViaGet();
+            }
+          })(),
+          (async () => {
+            try {
+              console.log("Requesting AI background image...");
+              const res = await fetch("/api/generate-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                  prompt: "一匹神采奕奕的骏马，奔腾，中国新年风格，红金色调，喜庆，高品质，艺术感" 
+                }),
+                signal: controller.signal,
+              });
+              if (!res.ok) throw new Error("Image generation failed");
+              const data = await res.json();
+              return data.imageUrl;
+            } catch (e) {
+              console.warn("Background image generation failed:", e);
+              return null;
+            }
+          })()
+        ]);
+
+        if (greetingResult.status === "fulfilled") {
+          greetingData = greetingResult.value;
+        } else {
+          throw greetingResult.reason;
+        }
+
+        if (imageResult.status === "fulfilled") {
+          generatedImageUrl = imageResult.value;
         }
         
         if (controller.signal.aborted) return;
+        
         if (greetingData) {
             setGreeting(greetingData);
+        }
+        if (generatedImageUrl) {
+            setBgImageUrl(generatedImageUrl);
         }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
@@ -425,15 +460,30 @@ function CardContent() {
             }}
           >
             {/* Card Texture & Decor */}
-            {theme.textureUrl && (
-              <div 
-                className="absolute inset-0 opacity-50 mix-blend-overlay"
-                style={{ 
-                  backgroundImage: `url('${theme.textureUrl}')`,
-                  opacity: theme.textureOpacity
-                }} 
-              />
+            {/* AI Generated Background */}
+            {bgImageUrl ? (
+               <div 
+                 className="absolute inset-0 z-0"
+                 style={{ 
+                   backgroundImage: `url('${bgImageUrl}')`,
+                   backgroundSize: 'cover',
+                   backgroundPosition: 'center',
+                   opacity: 0.8,
+                   mixBlendMode: 'overlay' 
+                 }} 
+               />
+            ) : (
+              theme.textureUrl && (
+                <div 
+                  className="absolute inset-0 opacity-50 mix-blend-overlay"
+                  style={{ 
+                    backgroundImage: `url('${theme.textureUrl}')`,
+                    opacity: theme.textureOpacity
+                  }} 
+                />
+              )
             )}
+            
             <CloudPattern className={theme.decorationColor} />
             
             <div className={`absolute inset-2 border-2 rounded-sm pointer-events-none z-20 ${theme.borderColor}`}>
@@ -622,14 +672,28 @@ function CardContent() {
               </div>
             </div>
 
-            {theme.textureUrl && (
-              <div
-                className="absolute inset-0 pointer-events-none z-10"
-                style={{
-                  backgroundImage: `url('${theme.textureUrl}')`,
-                  opacity: Number.parseFloat(theme.textureOpacity) * 0.5,
-                }}
-              />
+            {/* AI Generated Background for Capture Mode */}
+            {bgImageUrl ? (
+               <div 
+                 className="absolute inset-0 z-0 pointer-events-none"
+                 style={{ 
+                   backgroundImage: `url('${bgImageUrl}')`,
+                   backgroundSize: 'cover',
+                   backgroundPosition: 'center',
+                   opacity: 0.8,
+                   mixBlendMode: 'overlay' 
+                 }} 
+               />
+            ) : (
+              theme.textureUrl && (
+                <div
+                  className="absolute inset-0 pointer-events-none z-10"
+                  style={{
+                    backgroundImage: `url('${theme.textureUrl}')`,
+                    opacity: Number.parseFloat(theme.textureOpacity) * 0.5,
+                  }}
+                />
+              )
             )}
           </div>
 
