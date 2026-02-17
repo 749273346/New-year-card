@@ -16,6 +16,7 @@ function CardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const name = searchParams.get("name");
+  const initialBgUrl = searchParams.get("bg");
   
   const [userAgent, setUserAgent] = useState("");
   useEffect(() => {
@@ -347,10 +348,23 @@ function CardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
-        <p className="text-xl animate-pulse">正在为您制作新年贺卡...</p>
-        <p className="text-sm opacity-70 mt-2">AI 正在撰写诗词 & 绘制贺卡</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300 relative overflow-hidden">
+         {/* Use passed background if available */}
+         {initialBgUrl && (
+            <div 
+              className="absolute inset-0 z-0"
+              style={{ 
+                backgroundImage: `url('${initialBgUrl}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.4,
+                filter: 'blur(8px)'
+              }} 
+            />
+         )}
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4 z-10"></div>
+        <p className="text-xl animate-pulse z-10">正在为您制作新年贺卡...</p>
+        <p className="text-sm opacity-70 mt-2 z-10">AI 正在撰写诗词 & 绘制贺卡</p>
       </div>
     );
   }

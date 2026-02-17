@@ -10,6 +10,29 @@ export default function Home() {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const [isWeChat, setIsWeChat] = useState(false);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Generate random horse background on mount
+    const fetchBg = async () => {
+      try {
+        const res = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            prompt: "一匹神采奕奕的骏马，奔腾，中国新年风格，红金色调，喜庆，高品质，艺术感，背景壁纸" 
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.imageUrl) setBgImageUrl(data.imageUrl);
+        }
+      } catch (e) {
+        console.warn("Home background generation failed:", e);
+      }
+    };
+    fetchBg();
+  }, []);
 
   useEffect(() => {
     // 客户端检测微信环境，避免服务端渲染 hydration mismatch
@@ -31,7 +54,7 @@ export default function Home() {
     setIsNavigating(true);
     (document.activeElement as HTMLElement | null)?.blur?.();
 
-    const url = `/card?name=${encodeURIComponent(name)}`;
+    const url = `/card?name=${encodeURIComponent(name)}${bgImageUrl ? `&bg=${encodeURIComponent(bgImageUrl)}` : ""}`;
     
     // 延迟 80ms 确保 Loading 遮罩层完成渲染上屏
     // 解决移动端点击后“假死”或无反馈的问题
@@ -41,14 +64,42 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-red-800 text-yellow-300 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-red-800 text-yellow-300 p-4 relative overflow-hidden">
+      {/* Dynamic Background */}
+      {bgImageUrl && (
+        <div 
+          className="absolute inset-0 z-0"
+          style={{ 
+            backgroundImage: `url('${bgImageUrl}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.6,
+            mixBlendMode: 'overlay'
+          }} 
+        />
+      )}
+      
       {isNavigating && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-red-900 text-yellow-300">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4"></div>
-          <p className="text-xl animate-pulse font-bold">正在为您制作贺卡...</p>
-          <p className="text-sm opacity-70 mt-2">请稍候，精彩即将呈现</p>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-red-900/90 text-yellow-300 backdrop-blur-md">
+          {/* Reuse background for continuity */}
+          {bgImageUrl && (
+             <div 
+               className="absolute inset-0 z-[-1]"
+               style={{ 
+                 backgroundImage: `url('${bgImageUrl}')`,
+                 backgroundSize: 'cover',
+                 backgroundPosition: 'center',
+                 opacity: 0.4,
+                 filter: 'blur(8px)'
+               }} 
+             />
+          )}
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-4 z-10"></div>
+          <p className="text-xl animate-pulse font-bold z-10">正在为您制作贺卡...</p>
+          <p className="text-sm opacity-70 mt-2 z-10">请稍候，精彩即将呈现</p>
         </div>
       )}
+      <div className="relative z-10 w-full flex flex-col items-center">
       {isWeChat ? (
         <h1 className="text-4xl font-bold mb-8 text-center">2026新年贺卡AI生成</h1>
       ) : (
@@ -117,10 +168,11 @@ export default function Home() {
         </motion.form>
       )}
       
-      <div className="absolute bottom-4 text-xs text-yellow-500/50 flex items-center justify-center gap-2">
+      <div className="absolute bottom-4 text-xs text-yellow-500/50 flex items-center justify-center gap-2 z-10">
         <span>汕头水电车间 智轨先锋组</span>
         <span className="opacity-80 font-sans bg-black/10 px-1 rounded text-[10px]">v1.3</span>
       </div>
+    </div>
     </div>
   );
 }
