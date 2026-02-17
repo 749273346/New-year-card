@@ -20,7 +20,7 @@ function CardContent() {
   const [userAgent, setUserAgent] = useState("");
   useEffect(() => {
     if (typeof navigator !== "undefined") {
-      setUserAgent(navigator.userAgent);
+      setTimeout(() => setUserAgent(navigator.userAgent), 0);
     }
   }, []);
 

@@ -12,8 +12,10 @@ export default function Home() {
   const [isWeChat, setIsWeChat] = useState(false);
 
   useEffect(() => {
+    // 客户端检测微信环境，避免服务端渲染 hydration mismatch
+    // 使用 setTimeout 避免在 Effect 中同步更新状态导致的 cascading renders 警告
     if (typeof navigator !== "undefined" && /MicroMessenger/i.test(navigator.userAgent)) {
-      setIsWeChat(true);
+      setTimeout(() => setIsWeChat(true), 0);
     }
   }, []);
 
