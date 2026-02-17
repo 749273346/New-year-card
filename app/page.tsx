@@ -110,7 +110,7 @@ export default function Home() {
       )}
       
       <div className="absolute bottom-4 text-xs text-yellow-500/50">
-        汕头水电车间 智轨先锋组
+        汕头水电车间 智轨先锋组 v1.2
       </div>
     </div>
   );
