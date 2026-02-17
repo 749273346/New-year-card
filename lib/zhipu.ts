@@ -1,21 +1,20 @@
 
-export async function generateImage(prompt: string) {
-  const apiKey = process.env.ZHIPU_API_KEY;
-  if (!apiKey) {
-    const palettes = [
-      ["#7a0b14", "#b3121f", "#f59e0b", "#fde68a"],
-      ["#4c0519", "#9f1239", "#fbbf24", "#fff7ed"],
-      ["#991b1b", "#dc2626", "#facc15", "#fef3c7"],
-      ["#450a0a", "#b91c1c", "#f97316", "#fffbeb"],
-    ];
+// Extracted fallback image generation logic
+function generateFallbackImage() {
+  const palettes = [
+    ["#7a0b14", "#b3121f", "#f59e0b", "#fde68a"],
+    ["#4c0519", "#9f1239", "#fbbf24", "#fff7ed"],
+    ["#991b1b", "#dc2626", "#facc15", "#fef3c7"],
+    ["#450a0a", "#b91c1c", "#f97316", "#fffbeb"],
+  ];
 
-    const palette = palettes[Math.floor(Math.random() * palettes.length)];
-    const [c1, c2, c3, c4] = palette;
-    const n = () => Math.floor(Math.random() * 900) + 62;
-    const r = () => Math.floor(Math.random() * 120) + 30;
-    const o = () => (Math.random() * 0.35 + 0.08).toFixed(3);
+  const palette = palettes[Math.floor(Math.random() * palettes.length)];
+  const [c1, c2, c3, c4] = palette;
+  const n = () => Math.floor(Math.random() * 900) + 62;
+  const r = () => Math.floor(Math.random() * 120) + 30;
+  const o = () => (Math.random() * 0.35 + 0.08).toFixed(3);
 
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -61,7 +60,15 @@ export async function generateImage(prompt: string) {
   </g>
 </svg>`;
 
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+export async function generateImage(prompt: string) {
+  const apiKey = process.env.ZHIPU_API_KEY;
+  
+  // If no API key, return fallback immediately
+  if (!apiKey) {
+    return generateFallbackImage();
   }
 
   const styleVariants = [
@@ -74,26 +81,33 @@ export async function generateImage(prompt: string) {
   ];
   const variant = styleVariants[Math.floor(Math.random() * styleVariants.length)];
 
-  const response = await fetch("https://open.bigmodel.cn/api/paas/v4/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "cogview-4-250304", 
-      prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。`,
-      size: "1024x1024", // Standard size
-    }),
-  });
+  try {
+    const response = await fetch("https://open.bigmodel.cn/api/paas/v4/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "cogview-4-250304", 
+        prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。`,
+        size: "1024x1024", // Standard size
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to generate image");
+    if (!response.ok) {
+      const error = await response.json();
+      console.warn("Zhipu Image API Error:", error);
+      // Fallback on API error (e.g. quota exceeded)
+      return generateFallbackImage();
+    }
+
+    const data = await response.json();
+    return data.data[0].url;
+  } catch (error) {
+    console.warn("Image generation failed, using fallback:", error);
+    return generateFallbackImage();
   }
-
-  const data = await response.json();
-  return data.data[0].url;
 }
 
 export async function generateGreeting(name: string) {
