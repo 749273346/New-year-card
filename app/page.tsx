@@ -22,7 +22,11 @@ export default function Home() {
     (document.activeElement as HTMLElement | null)?.blur?.();
 
     const url = `/card?name=${encodeURIComponent(name)}`;
-    requestAnimationFrame(() => router.push(url));
+    // Use setTimeout to allow the UI to update (show loading spinner) before
+    // the heavy lifting of navigation starts.
+    setTimeout(() => {
+      router.push(url);
+    }, 10);
   };
 
   return (
@@ -48,7 +52,7 @@ export default function Home() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5, duration: 0.5 }}
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-md bg-white/10 p-8 rounded-xl backdrop-blur-sm border border-yellow-500/30 shadow-2xl"
+        className="flex flex-col gap-4 w-full max-w-md bg-white/10 p-8 rounded-xl backdrop-blur-sm sm:backdrop-blur-sm border border-yellow-500/30 shadow-2xl"
       >
         <label htmlFor="name" className="text-lg text-center mb-2">
           请输入您的名字，开启专属祝福

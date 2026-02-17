@@ -4,10 +4,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
-import Fireworks from "@/components/Fireworks";
+import dynamic from "next/dynamic";
 import { Download, RefreshCw, Sparkles } from "lucide-react";
 import { CornerPattern, CloudPattern, HorseSilhouette } from "@/components/CardDecorations";
 import { themes, getRandomTheme, CardTheme } from "./themes";
+
+const Fireworks = dynamic(() => import("@/components/Fireworks"), { ssr: false });
 
 function CardContent() {
   const router = useRouter();
@@ -19,8 +21,17 @@ function CardContent() {
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [theme, setTheme] = useState<CardTheme>(themes[0]); // Default theme
+  const [showFireworks, setShowFireworks] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Delay fireworks initialization to avoid blocking main thread during transition
+    const timer = setTimeout(() => {
+      setShowFireworks(true);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // Randomize theme on mount
@@ -168,7 +179,7 @@ function CardContent() {
 
   return (
     <div className={`min-h-screen flex flex-col items-center py-8 px-4 overflow-hidden relative transition-colors duration-500 ${theme.pageBg}`}>
-      <Fireworks />
+      {showFireworks && <Fireworks />}
       
       {/* Background Ambient Effects */}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
