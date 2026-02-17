@@ -2,7 +2,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -346,37 +345,48 @@ function CardContent() {
 
   const enableMotion = !lowPowerMode && !isCapturing;
 
-  return (
-    <div className={`min-h-screen flex flex-col items-center py-8 px-4 overflow-hidden relative ${theme.pageBg}`}>
-      {showFireworks && !lowPowerMode && <Fireworks />}
-      {exportImageUrl && (
-        <div className="fixed inset-0 z-[200] bg-black/80 p-4 flex flex-col">
-          <div className="flex items-center justify-between gap-3 text-white">
-            <div className="text-sm font-semibold">长按图片保存到相册</div>
-            <button
+  // 预览模式（微信/手机端生成图片后）
+  if (exportImageUrl) {
+    return (
+      <div className="fixed inset-0 z-[500] bg-zinc-900 flex flex-col overflow-y-auto overflow-x-hidden">
+        <div className="min-h-screen w-full flex flex-col items-center py-8 px-4">
+          <div className="w-full max-w-md relative shadow-2xl">
+            {/* 使用原生 img 标签以确保在微信等环境中有最好的长按保存兼容性 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={exportImageUrl}
+              alt={exportFilename ?? "新年贺卡"}
+              width={exportImageSize?.width}
+              height={exportImageSize?.height}
+              className="w-full h-auto rounded-sm block"
+              style={{ display: "block" }}
+            />
+          </div>
+          
+          <div className="fixed bottom-8 left-0 right-0 flex flex-col items-center gap-4 z-50 pointer-events-none">
+             <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-auto animate-bounce">
+               长按图片保存到相册
+             </div>
+             <button
               onClick={() => {
                 setExportImageUrl(null);
                 setExportFilename(null);
                 setExportImageSize(null);
               }}
-              className="px-3 py-2 rounded-md bg-white/10 border border-white/20 text-sm"
+              className="pointer-events-auto bg-white text-zinc-900 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-gray-100 transition active:scale-95 flex items-center gap-2"
             >
-              关闭
+              <RefreshCw size={18} />
+              返回修改
             </button>
           </div>
-          <div className="mt-4 flex-1 overflow-auto flex items-start justify-center">
-            <Image
-              src={exportImageUrl}
-              alt={exportFilename ?? "新年贺卡"}
-              width={exportImageSize?.width ?? 1200}
-              height={exportImageSize?.height ?? 1800}
-              unoptimized
-              className="max-w-full h-auto rounded-md"
-              style={{ width: "100%", height: "auto" }}
-            />
-          </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen flex flex-col items-center py-8 px-4 overflow-hidden relative ${theme.pageBg}`}>
+      {showFireworks && !lowPowerMode && <Fireworks />}
       
       {/* Background Ambient Effects */}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
