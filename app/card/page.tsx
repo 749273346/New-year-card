@@ -58,9 +58,13 @@ function CardContent() {
         setError("");
 
         const fetchViaPost = async () => {
+          console.log("Attempting POST request...");
           const res = await fetch("/api/generate-greeting", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
             body: JSON.stringify({ name }),
             cache: "no-store",
             signal: controller.signal,
@@ -79,8 +83,12 @@ function CardContent() {
         };
 
         const fetchViaGet = async () => {
+          console.log("Attempting GET fallback...");
           const res = await fetch(`/api/generate-greeting?name=${encodeURIComponent(name)}`, {
             method: "GET",
+            headers: {
+              "Accept": "application/json"
+            },
             cache: "no-store",
             signal: controller.signal,
           });
@@ -97,20 +105,35 @@ function CardContent() {
           return (await res.json()) as { poem: string[]; wish: string };
         };
 
-        let greetingData: { poem: string[]; wish: string };
+        let greetingData: { poem: string[]; wish: string } | undefined;
         try {
           greetingData = await fetchViaPost();
         } catch (postErr) {
+          console.warn("POST request failed:", postErr);
           if (postErr instanceof Error && postErr.name === "AbortError") return;
-          greetingData = await fetchViaGet();
+          try {
+            greetingData = await fetchViaGet();
+          } catch (getErr) {
+             console.warn("GET request failed:", getErr);
+             if (getErr instanceof Error && getErr.name === "AbortError") return;
+             throw getErr; // Throw the GET error to be caught by outer block
+          }
         }
+        
         if (controller.signal.aborted) return;
-        setGreeting(greetingData);
+        if (greetingData) {
+            setGreeting(greetingData);
+        }
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
-        console.error(err);
+        console.error("Final error:", err);
         if (err instanceof Error) {
-          setError(err.message);
+          // Enhance error message for "Failed to fetch"
+          if (err.message === "Failed to fetch") {
+             setError("网络请求失败，请检查网络连接或稍后重试 (Failed to fetch)");
+          } else {
+             setError(err.message);
+          }
         } else {
           setError("Something went wrong");
         }
