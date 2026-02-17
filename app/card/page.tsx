@@ -2,6 +2,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -16,24 +17,31 @@ function CardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const name = searchParams.get("name");
+  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isMobile = /Android|iPhone|iPad|iPod|Mobi/i.test(userAgent);
+  const isWeChat = /MicroMessenger/i.test(userAgent);
+  const lowPowerMode = isWeChat;
   
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [exportImageUrl, setExportImageUrl] = useState<string | null>(null);
+  const [exportFilename, setExportFilename] = useState<string | null>(null);
+  const [exportImageSize, setExportImageSize] = useState<{ width: number; height: number } | null>(null);
   const [theme, setTheme] = useState<CardTheme>(themes[0]); // Default theme
   const [showFireworks, setShowFireworks] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Delay fireworks initialization to avoid blocking main thread during transition
+    if (lowPowerMode) return;
     const timer = setTimeout(() => {
       setShowFireworks(true);
     }, 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [lowPowerMode]);
 
   useEffect(() => {
     // Randomize theme on mount
@@ -74,28 +82,113 @@ function CardContent() {
     generateGreeting();
   }, [generateGreeting]);
 
+  const blobToDataUrl = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Failed to read image"));
+      reader.readAsDataURL(blob);
+    });
+
   const handleDownload = async () => {
     if (!name || isDownloading || !greeting || !cardRef.current) return;
     
     try {
       setIsDownloading(true);
       setIsCapturing(true);
+      setExportImageUrl(null);
+      setExportFilename(null);
+      setExportImageSize(null);
 
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       await (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready;
-      await new Promise(resolve => setTimeout(resolve, 80));
+      // Increased delay to ensure DOM is stable and images/fonts are rendered
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      const blob = await htmlToImage.toBlob(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-      });
+      const element = cardRef.current;
+      if (!element) {
+        throw new Error("Card element not found");
+      }
+
+      // Retry logic with different configurations
+      let blob: Blob | null = null;
+      
+      // Attempt 1: High quality
+      try {
+        blob = await htmlToImage.toBlob(element, {
+          cacheBust: true,
+          pixelRatio: isWeChat ? 1.5 : (isMobile ? 2 : 2),
+          style: { transform: 'none' }, // Ensure no transforms affect the capture
+        });
+      } catch (e) {
+        console.warn("High quality capture failed:", e);
+      }
+
+      // Attempt 2: Medium quality (1.5x or 1x)
+      if (!blob) {
+        try {
+          blob = await htmlToImage.toBlob(element, {
+            cacheBust: true,
+            pixelRatio: 1.5,
+            style: { transform: 'none' },
+          });
+        } catch (e) {
+          console.warn("Medium quality capture failed:", e);
+        }
+      }
+
+      // Attempt 3: Low quality (1x) and disable cacheBust
+      if (!blob) {
+        try {
+          blob = await htmlToImage.toBlob(element, {
+            cacheBust: false,
+            pixelRatio: 1,
+            style: { transform: 'none' },
+          });
+        } catch (e) {
+          console.error("Low quality capture failed:", e);
+        }
+      }
+      
+      // Attempt 4: toPng fallback
+      if (!blob) {
+          try {
+             const dataUrl = await htmlToImage.toPng(element, {
+                cacheBust: false,
+                pixelRatio: 1,
+             });
+             const res = await fetch(dataUrl);
+             blob = await res.blob();
+          } catch (e) {
+             console.error("toPng fallback failed:", e);
+          }
+      }
 
       if (!blob) {
-        throw new Error("Failed to generate image blob");
+        throw new Error("Failed to generate image blob after multiple attempts");
       }
 
       const filename = `${name}-NewYearCard.png`;
+      const preferPreview = isMobile || isWeChat;
+
+      if (preferPreview) {
+        const dataUrl = await blobToDataUrl(blob);
+        setExportImageUrl(dataUrl);
+        setExportFilename(filename);
+        try {
+          const img = new window.Image();
+          img.src = dataUrl;
+          await img.decode?.();
+          if (img.naturalWidth && img.naturalHeight) {
+            setExportImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+          }
+        } catch {
+          setExportImageSize(null);
+        }
+        return;
+      }
+
       const file = new File([blob], filename, { type: "image/png" });
 
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -183,9 +276,39 @@ function CardContent() {
     );
   };
 
+  const enableMotion = !lowPowerMode && !isCapturing;
+
   return (
-    <div className={`min-h-screen flex flex-col items-center py-8 px-4 overflow-hidden relative transition-colors duration-500 ${theme.pageBg}`}>
-      {showFireworks && <Fireworks />}
+    <div className={`min-h-screen flex flex-col items-center py-8 px-4 overflow-hidden relative ${theme.pageBg}`}>
+      {showFireworks && !lowPowerMode && <Fireworks />}
+      {exportImageUrl && (
+        <div className="fixed inset-0 z-[200] bg-black/80 p-4 flex flex-col">
+          <div className="flex items-center justify-between gap-3 text-white">
+            <div className="text-sm font-semibold">长按图片保存到相册</div>
+            <button
+              onClick={() => {
+                setExportImageUrl(null);
+                setExportFilename(null);
+                setExportImageSize(null);
+              }}
+              className="px-3 py-2 rounded-md bg-white/10 border border-white/20 text-sm"
+            >
+              关闭
+            </button>
+          </div>
+          <div className="mt-4 flex-1 overflow-auto flex items-start justify-center">
+            <Image
+              src={exportImageUrl}
+              alt={exportFilename ?? "新年贺卡"}
+              width={exportImageSize?.width ?? 1200}
+              height={exportImageSize?.height ?? 1800}
+              unoptimized
+              className="max-w-full h-auto rounded-md"
+              style={{ width: "100%", height: "auto" }}
+            />
+          </div>
+        </div>
+      )}
       
       {/* Background Ambient Effects */}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
@@ -194,12 +317,13 @@ function CardContent() {
       </div>
 
           {/* Card Wrapper for Motion */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.8, type: "spring", bounce: 0.3 }}
-        className="w-full max-w-sm md:max-w-md relative z-10 perspective-1000"
-      >
+      {enableMotion ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.8, type: "spring", bounce: 0.3 }}
+          className="w-full max-w-sm md:max-w-md relative z-10 perspective-1000"
+        >
         <div 
           id="card-capture"
           ref={cardRef}
@@ -343,7 +467,105 @@ function CardContent() {
             再做一张
           </button>
         </div>
-      </motion.div>
+        </motion.div>
+      ) : (
+        <div className="w-full max-w-sm md:max-w-md relative z-10">
+          <div 
+            id="card-capture"
+            ref={cardRef}
+            className="relative w-full h-full min-h-[640px] rounded-sm overflow-hidden"
+            style={{ background: theme.cardBg }}
+          >
+            <CloudPattern className={theme.decorationColor} />
+            <div className={`absolute inset-2 border-2 rounded-sm pointer-events-none z-20 ${theme.borderColor}`}>
+              <div className={`absolute inset-1 border rounded-sm ${theme.borderColor}`} />
+            </div>
+            <CornerPattern position="tl" className={`${theme.decorationColor} top-4 left-4`} />
+            <CornerPattern position="tr" className={`${theme.decorationColor} top-4 right-4`} />
+            <CornerPattern position="bl" className={`${theme.decorationColor} bottom-4 left-4`} />
+            <CornerPattern position="br" className={`${theme.decorationColor} bottom-4 right-4`} />
+            <HorseSilhouette className={`${theme.decorationColor} bottom-16 right-[-20px] scale-150 rotate-[-10deg]`} />
+
+            <div id="card-content" className={`relative z-30 p-8 pt-12 text-center min-h-[600px] flex flex-col justify-between h-full ${theme.textColorPrimary}`}>
+              <div className="relative">
+                <div className="inline-block relative mb-2">
+                  <h1 className={`text-4xl md:text-5xl font-bold font-serif tracking-widest drop-shadow-sm ${theme.textColorAccent}`}>
+                    新年快乐
+                  </h1>
+                </div>
+                <div className="flex items-center justify-center gap-3 mt-2 opacity-90">
+                  <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
+                  <p className={`text-sm tracking-[0.2em] ${theme.textColorSecondary}`}>
+                    <span className="font-sans font-semibold text-base">2026 丙午马年</span>
+                  </p>
+                  <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
+                </div>
+              </div>
+
+              <div className="my-6 space-y-8 flex flex-col items-center flex-grow justify-center">
+                <div className={`space-y-4 font-serif text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
+                  {greeting?.poem.map((line, index) => (
+                    <div key={index} className="flex items-center justify-center gap-2">
+                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
+                      <p className="tracking-[0.15em]">{line}</p>
+                      <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative w-full">
+                  <div className={`relative px-6 py-5 border-t border-b ${theme.highlightBg} ${theme.borderColor}`}>
+                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
+                      {greeting && name && renderWishWithBoldName(greeting.wish, name)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
+                <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted}`}>
+                  汕头水电车间 · 智轨先锋组
+                </div>
+              </div>
+            </div>
+
+            {theme.textureUrl && (
+              <div
+                className="absolute inset-0 pointer-events-none z-10"
+                style={{
+                  backgroundImage: `url('${theme.textureUrl}')`,
+                  opacity: Number.parseFloat(theme.textureOpacity) * 0.5,
+                }}
+              />
+            )}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-4 justify-center relative z-20">
+            <button 
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition transform active:scale-95 hover:scale-105 ${theme.buttonPrimary} ${
+                isDownloading ? "cursor-not-allowed opacity-80" : ""
+              }`}
+            >
+              {isDownloading ? (
+                <RefreshCw className="animate-spin" size={20} />
+              ) : (
+                <Download size={20} />
+              )}
+              {isDownloading ? "保存中..." : "保存贺卡"}
+            </button>
+
+            <button 
+              onClick={() => router.push("/")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition border ${theme.buttonSecondary}`}
+            >
+              <RefreshCw size={20} />
+              再做一张
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

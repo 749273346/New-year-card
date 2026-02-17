@@ -5,10 +5,12 @@ import { Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function MusicPlayer() {
+  const isWeChat = typeof navigator !== "undefined" && /MicroMessenger/i.test(navigator.userAgent);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (isWeChat) return;
     const playlist = [
       "/music/cny-upbeat-chinese-new-year.mp3",
       "/music/cny-chinese-new-year.mp3",
@@ -60,9 +62,10 @@ export default function MusicPlayer() {
       audio.pause();
       audio.src = "";
     };
-  }, []);
+  }, [isWeChat]);
 
   const togglePlay = () => {
+    if (isWeChat) return;
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -75,6 +78,8 @@ export default function MusicPlayer() {
       return true;
     });
   };
+
+  if (isWeChat) return null;
 
   return (
     <motion.button
