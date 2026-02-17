@@ -70,6 +70,7 @@ function CardContent() {
         name: name,
         poem: JSON.stringify(greeting.poem),
         wish: greeting.wish,
+        themeId: theme.id,
       });
 
       const response = await fetch(`/api/card-image?${params.toString()}`);

@@ -10,22 +10,20 @@ export default function Fireworks() {
     // Play sound
     const audio = new Audio("/firework.mp3");
     audio.volume = 0.8;
-    // Assume we want it to continue as long as fireworks are visible, loop if necessary
-    // But user said sound didn't end, implying it was too long. 
-    // So maybe we don't force loop, but we definitely cut it off.
-    // However, for continuous fireworks, looping is usually better if the clip is short.
-    // Let's set loop to true to match the 15s duration visually.
     audio.loop = true; 
     audioRef.current = audio;
+
+    // Handle loading errors
+    audio.addEventListener('error', (e) => {
+      // console.warn("Audio load error", e);
+    });
     
-    // User interaction policy might block auto-play, but since user just clicked "Generate", it might work.
-    // If not, we catch the error.
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch((e) => {
         // Ignore AbortError which happens if component unmounts quickly
-        if (e.name !== 'AbortError') {
-          // console.log("Audio play failed", e);
+        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+           console.warn("Audio play failed", e);
         }
       });
     }

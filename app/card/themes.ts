@@ -32,6 +32,15 @@ export interface CardTheme {
   // 特殊效果
   glowColor: string;          // 发光效果颜色 (e.g., shadow-yellow-500/50)
   highlightBg: string;        // 高亮区域背景 (e.g., bg-yellow-500/20)
+
+  // Satori 兼容的 Hex 颜色 (用于服务端生成图片)
+  hexColors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    border: string;
+    glow: string;
+  };
 }
 
 export const themes: CardTheme[] = [
@@ -53,6 +62,13 @@ export const themes: CardTheme[] = [
     buttonSecondary: "bg-white/10 text-white border-white/20 hover:bg-white/20",
     glowColor: "rgba(255, 215, 0, 0.5)",
     highlightBg: "bg-[#5e0b0b]/60",
+    hexColors: {
+      primary: "#FEF3C7", // yellow-100
+      secondary: "#FDE68A", // yellow-200
+      accent: "#FBBF24", // yellow-400
+      border: "rgba(234, 179, 8, 0.3)", // yellow-500/30
+      glow: "rgba(255, 215, 0, 0.5)",
+    }
   },
   {
     id: "festive-vermilion",
@@ -72,6 +88,13 @@ export const themes: CardTheme[] = [
     buttonSecondary: "bg-black/10 text-white border-white/30 hover:bg-black/20",
     glowColor: "rgba(255, 255, 255, 0.3)",
     highlightBg: "bg-black/10",
+    hexColors: {
+      primary: "#FFFFFF", // white
+      secondary: "#FFEDD5", // orange-100
+      accent: "#FDE047", // yellow-300
+      border: "rgba(254, 240, 138, 0.4)", // yellow-200/40
+      glow: "rgba(255, 255, 255, 0.3)",
+    }
   },
   {
     id: "burgundy-gold",
@@ -91,6 +114,13 @@ export const themes: CardTheme[] = [
     buttonSecondary: "bg-amber-900/30 text-amber-100 border-amber-500/30 hover:bg-amber-900/50",
     glowColor: "rgba(245, 158, 11, 0.3)",
     highlightBg: "bg-[#2a0a0a]/40",
+    hexColors: {
+      primary: "#FEF3C7", // amber-100
+      secondary: "rgba(253, 230, 138, 0.8)", // amber-200/80
+      accent: "#FBBF24", // amber-400
+      border: "rgba(217, 119, 6, 0.4)", // amber-600/40
+      glow: "rgba(245, 158, 11, 0.3)",
+    }
   },
   {
     id: "papercut-red",
@@ -110,6 +140,13 @@ export const themes: CardTheme[] = [
     buttonSecondary: "bg-red-800/20 text-white border-white/40 hover:bg-red-800/30",
     glowColor: "rgba(255, 255, 255, 0.4)",
     highlightBg: "bg-white/10",
+    hexColors: {
+      primary: "#FFFFFF", // white
+      secondary: "#FEF2F2", // red-50
+      accent: "#FEF08A", // yellow-200
+      border: "rgba(255, 255, 255, 0.4)", // white/40
+      glow: "rgba(255, 255, 255, 0.4)",
+    }
   },
   {
     id: "golden-red",
@@ -129,6 +166,13 @@ export const themes: CardTheme[] = [
     buttonSecondary: "bg-rose-900/30 text-yellow-100 border-yellow-200/30 hover:bg-rose-900/50",
     glowColor: "rgba(251, 191, 36, 0.4)",
     highlightBg: "bg-black/20",
+    hexColors: {
+      primary: "#FEFCE8", // yellow-50
+      secondary: "#FFE4E6", // rose-100
+      accent: "#FDE047", // yellow-300
+      border: "rgba(250, 204, 21, 0.4)", // yellow-400/40
+      glow: "rgba(251, 191, 36, 0.4)",
+    }
   }
 ];
 
