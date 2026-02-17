@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { getRandomBuiltinBackground } from "@/lib/backgrounds";
+import { getRandomBuiltinBackground, saveBackgroundToLocal } from "@/lib/backgrounds";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -30,7 +30,11 @@ export default function Home() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.imageUrl) setBgImageUrl(data.imageUrl);
+          if (data.imageUrl) {
+            setBgImageUrl(data.imageUrl);
+            // Save the new high-quality AI image to local storage for future use
+            saveBackgroundToLocal(data.imageUrl);
+          }
         }
       } catch (e) {
         console.warn("Home background generation failed, keeping built-in:", e);

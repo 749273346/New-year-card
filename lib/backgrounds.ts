@@ -11,6 +11,49 @@ export const HORSE_BACKGROUNDS = [
   "https://image.pollinations.ai/prompt/Detailed%20illustration%20of%20a%20horse%20Chinese%20mythology%20style?width=1024&height=1024&seed=110&nologo=true"
 ];
 
+const LOCAL_STORAGE_KEY = "new_year_card_backgrounds";
+
 export function getRandomBuiltinBackground(): string {
+  // Try to get locally stored backgrounds first
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        const localBackgrounds = JSON.parse(stored);
+        if (Array.isArray(localBackgrounds) && localBackgrounds.length > 0) {
+          // 50% chance to use a new locally generated background, 50% chance to use built-in
+          // This keeps it fresh but ensures high quality built-ins are still seen
+          if (Math.random() > 0.5) {
+             return localBackgrounds[Math.floor(Math.random() * localBackgrounds.length)];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to read local backgrounds:", e);
+    }
+  }
+  
   return HORSE_BACKGROUNDS[Math.floor(Math.random() * HORSE_BACKGROUNDS.length)];
+}
+
+export function saveBackgroundToLocal(url: string) {
+  if (typeof window === "undefined" || !url) return;
+  
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    let backgrounds: string[] = [];
+    
+    if (stored) {
+      backgrounds = JSON.parse(stored);
+    }
+    
+    // Avoid duplicates
+    if (!backgrounds.includes(url)) {
+      // Keep only the latest 20 generated backgrounds to manage storage size
+      backgrounds = [url, ...backgrounds].slice(0, 20);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(backgrounds));
+    }
+  } catch (e) {
+    console.warn("Failed to save background locally:", e);
+  }
 }
