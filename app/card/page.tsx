@@ -287,8 +287,9 @@ function CardContent() {
       const currentUA = window.navigator.userAgent;
       const isMobileClick = /Android|iPhone|iPad|iPod|Mobi/i.test(currentUA);
       const isWeChatClick = /MicroMessenger/i.test(currentUA);
-      const isSmallScreen = window.innerWidth < 1024; // Treat tablets as mobile
-      const preferPreview = isMobileClick || isWeChatClick || isSmallScreen;
+      // Only show preview (for long press) on actual mobile devices or WeChat
+      // Desktop users (even with small screens) should get direct download
+      const preferPreview = isMobileClick || isWeChatClick;
 
       if (preferPreview) {
         const dataUrl = await blobToDataUrl(blob);
@@ -428,9 +429,24 @@ function CardContent() {
           </div>
           
           <div className="fixed bottom-8 left-0 right-0 flex flex-col items-center gap-4 z-50 pointer-events-none">
+             {/* Only show "Long press" hint on touch devices/WeChat */}
              <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-auto animate-bounce">
-               长按即可保存
+               {isWeChat ? "长按图片即可保存" : "长按或点击下方按钮保存"}
              </div>
+             
+             {/* Add direct download button for non-WeChat users who end up in preview mode */}
+             {!isWeChat && (
+               <a 
+                 href={exportImageUrl} 
+                 download={exportFilename || "new-year-card.png"}
+                 className="pointer-events-auto bg-yellow-500 text-red-900 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-yellow-400 transition active:scale-95 flex items-center gap-2"
+                 onClick={(e) => e.stopPropagation()}
+               >
+                 <Download size={18} />
+                 保存图片
+               </a>
+             )}
+
              <button
               onClick={() => {
                 setExportImageUrl(null);
