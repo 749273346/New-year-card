@@ -30,7 +30,7 @@ function CardContent() {
   const lowPowerMode = isWeChat;
   
   const [greeting, setGreeting] = useState<{ poem: string[]; wish: string } | null>(null);
-  const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
+  const [bgImageUrl, setBgImageUrl] = useState<string | null>(initialBgUrl);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
