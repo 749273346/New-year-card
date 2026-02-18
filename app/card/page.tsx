@@ -684,7 +684,7 @@ function CardContent() {
             <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
                 <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted} flex items-center justify-center gap-2`}>
                   <span>汕头水电车间 · 智轨先锋组</span>
-                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.6</span>
+                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.7</span>
                 </div>
               </div>
           </div>

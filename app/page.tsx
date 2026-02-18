@@ -236,7 +236,7 @@ export default function Home() {
     </div>
       <div className="absolute bottom-4 text-xs text-yellow-500/50 flex items-center justify-center gap-2 z-10">
         <span>汕头水电车间 智轨先锋组</span>
-        <span className="opacity-80 font-sans bg-black/10 px-1 rounded text-[10px]">v1.6</span>
+        <span className="opacity-80 font-sans bg-black/10 px-1 rounded text-[10px]">v1.7</span>
       </div>
     </div>
   );
