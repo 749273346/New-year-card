@@ -86,7 +86,7 @@ function CardContent() {
           try {
             audio.pause();
             audio.currentTime = 0; // Optional: reset if we want to be clean
-          } catch (e) {
+          } catch {
             // Ignore potential errors if audio is already stopped or unloaded
           }
         }, 2000);
