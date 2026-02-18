@@ -4,9 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 
+// 扩展 Window 接口以包含 WeixinJSBridge
 declare global {
   interface Window {
-    WeixinJSBridge?: unknown;
+    WeixinJSBridge: {
+      invoke: (
+        action: string,
+        data: Record<string, unknown>,
+        callback: () => void
+      ) => void;
+    };
   }
 }
 
@@ -15,63 +22,89 @@ export default function MusicPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // 1. 初始化音频对象
     const playlist = [
       "/music/cny-upbeat-chinese-new-year.mp3",
       "/music/cny-chinese-new-year.mp3",
       "/music/cny-lunar-new-year.mp3",
       "/music/cny-is-coming.mp3",
     ];
-
     const randomIndex = Math.floor(Math.random() * playlist.length);
     const audio = new Audio(playlist[randomIndex]);
     audio.loop = true;
     audio.volume = 0.4;
     audioRef.current = audio;
 
-    const cleanupInteractionListeners = () => {
-      window.removeEventListener("click", handleInteraction);
-      window.removeEventListener("touchstart", handleInteraction);
-      window.removeEventListener("keydown", handleInteraction);
-      window.removeEventListener("pointerdown", handleInteraction);
-    };
-
-    const attemptPlay = async () => {
+    // 2. 核心播放逻辑
+    const playAudio = async () => {
       try {
-        await audio.play();
-        setIsPlaying(true);
-        // 播放成功后移除交互监听
-        cleanupInteractionListeners();
+        if (audio.paused) {
+          await audio.play();
+          setIsPlaying(true);
+          // 播放成功后移除交互监听
+          removeInteractionListeners();
+        }
       } catch (err) {
         console.log("Autoplay prevented:", err);
         setIsPlaying(false);
       }
     };
 
-    const handleInteraction = () => {
-      attemptPlay();
+    // 3. 微信特定处理 (大厂常用 Hack: 通过 invoke getNetworkType 触发)
+    const handleWeixinPlay = () => {
+      playAudio();
+      if (typeof window !== "undefined" && window.WeixinJSBridge) {
+        window.WeixinJSBridge.invoke(
+          "getNetworkType",
+          {},
+          () => {
+            playAudio();
+          }
+        );
+      }
     };
 
-    // 立即尝试自动播放
-    attemptPlay();
+    // 4. 用户交互处理
+    const handleInteraction = () => {
+      playAudio();
+    };
 
-    // 监听各种用户交互事件以触发播放
-    window.addEventListener("click", handleInteraction);
-    window.addEventListener("touchstart", handleInteraction);
-    window.addEventListener("keydown", handleInteraction);
-    window.addEventListener("pointerdown", handleInteraction);
+    // 添加监听器
+    const addInteractionListeners = () => {
+      // 使用 capture: true 确保尽早捕获事件
+      document.addEventListener("click", handleInteraction, { capture: true, once: true });
+      document.addEventListener("touchstart", handleInteraction, { capture: true, once: true });
+      document.addEventListener("keydown", handleInteraction, { capture: true, once: true });
+      document.addEventListener("scroll", handleInteraction, { capture: true, once: true });
+    };
 
-    // 微信特定处理
+    const removeInteractionListeners = () => {
+      document.removeEventListener("click", handleInteraction, { capture: true });
+      document.removeEventListener("touchstart", handleInteraction, { capture: true });
+      document.removeEventListener("keydown", handleInteraction, { capture: true });
+      document.removeEventListener("scroll", handleInteraction, { capture: true });
+    };
+
+    // 5. 初始化执行
+    // 立即尝试播放
+    playAudio();
+
+    // 监听微信 Bridge
     if (typeof window !== "undefined" && window.WeixinJSBridge) {
-      attemptPlay();
+      handleWeixinPlay();
     } else {
-      document.addEventListener("WeixinJSBridgeReady", attemptPlay, { once: true });
+      document.addEventListener("WeixinJSBridgeReady", handleWeixinPlay, { once: true });
     }
 
+    // 监听用户交互
+    addInteractionListeners();
+
+    // 清理函数
     return () => {
       audio.pause();
-      audio.src = "";
-      cleanupInteractionListeners();
-      document.removeEventListener("WeixinJSBridgeReady", attemptPlay);
+      audio.src = ""; // 释放资源
+      removeInteractionListeners();
+      document.removeEventListener("WeixinJSBridgeReady", handleWeixinPlay);
     };
   }, []);
 
