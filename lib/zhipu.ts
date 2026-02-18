@@ -26,6 +26,10 @@ export async function generateImage(prompt: string) {
   ];
   const variant = styleVariants[Math.floor(Math.random() * styleVariants.length)];
 
+  // Setup timeout for API call (15 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   try {
     const response = await fetch("https://open.bigmodel.cn/api/paas/v4/images/generations", {
       method: "POST",
@@ -38,7 +42,10 @@ export async function generateImage(prompt: string) {
         prompt: `${prompt}。${variant}。每次生成保持构图与细节不同，无文字。请确保主体位于画面中心，保留完整头部，周围留白，广角视角。`,
         size: "768x1344", // Vertical aspect ratio for mobile
       }),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.json();
@@ -63,7 +70,12 @@ export async function generateImage(prompt: string) {
       return imageUrl; 
     }
   } catch (error) {
-    console.warn("Image generation failed, using fallback:", error);
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn("Image generation timed out (15s), using fallback.");
+    } else {
+      console.warn("Image generation failed, using fallback:", error);
+    }
     return generateFallbackImage();
   }
 }
@@ -207,6 +219,8 @@ export async function generateGreeting(name: string) {
 
   if (deepseekApiKey) {
     // Use DeepSeek API
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
     try {
       console.log("Attempting DeepSeek API...");
       const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -239,7 +253,10 @@ ${referencePrompt}
           presence_penalty: 0.5, // Encourage new topics
           response_format: { type: "json_object" }
         }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -252,7 +269,8 @@ ${referencePrompt}
       console.log("DeepSeek success.");
       return parseGreetingContent(content, name);
     } catch (error) {
-      console.error("DeepSeek generation failed, falling back...", error);
+      clearTimeout(timeoutId);
+      console.error("DeepSeek generation failed (timeout or error), falling back...", error);
       // Fallback logic continues below
     }
   }
@@ -265,6 +283,9 @@ ${referencePrompt}
       wish: wishTemplates[Math.floor(Math.random() * wishTemplates.length)]
     };
   }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
   try {
     console.log("Attempting Zhipu API...");
@@ -296,7 +317,10 @@ ${referencePrompt}
          ],
          temperature: 1.0, // Increased from 0.9 for more creativity
       }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.json();
@@ -309,7 +333,8 @@ ${referencePrompt}
     console.log("Zhipu success.");
     return parseGreetingContent(content, name);
   } catch (error) {
-    console.error("All AI generation failed. Using fallback.", error);
+    clearTimeout(timeoutId);
+    console.error("All AI generation failed (timeout or error). Using fallback.", error);
     return {
       poem: getRandomFallbackPoem(),
       wish: wishTemplates[Math.floor(Math.random() * wishTemplates.length)]
