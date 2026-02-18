@@ -28,36 +28,50 @@ export default function MusicPlayer() {
     audio.volume = 0.4;
     audioRef.current = audio;
 
-    const requestPlay = async () => {
+    const cleanupInteractionListeners = () => {
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("keydown", handleInteraction);
+      window.removeEventListener("pointerdown", handleInteraction);
+    };
+
+    const attemptPlay = async () => {
       try {
         await audio.play();
         setIsPlaying(true);
-      } catch {
+        // 播放成功后移除交互监听
+        cleanupInteractionListeners();
+      } catch (err) {
+        console.log("Autoplay prevented:", err);
         setIsPlaying(false);
       }
     };
 
-    const unlockPlay = () => {
-      void requestPlay();
+    const handleInteraction = () => {
+      attemptPlay();
     };
 
-    void requestPlay();
+    // 立即尝试自动播放
+    attemptPlay();
 
+    // 监听各种用户交互事件以触发播放
+    window.addEventListener("click", handleInteraction);
+    window.addEventListener("touchstart", handleInteraction);
+    window.addEventListener("keydown", handleInteraction);
+    window.addEventListener("pointerdown", handleInteraction);
+
+    // 微信特定处理
     if (typeof window !== "undefined" && window.WeixinJSBridge) {
-      unlockPlay();
+      attemptPlay();
     } else {
-      document.addEventListener("WeixinJSBridgeReady", unlockPlay, { once: true });
+      document.addEventListener("WeixinJSBridgeReady", attemptPlay, { once: true });
     }
-
-    window.addEventListener("touchstart", unlockPlay, { once: true, passive: true });
-    window.addEventListener("pointerdown", unlockPlay, { once: true });
 
     return () => {
       audio.pause();
       audio.src = "";
-      document.removeEventListener("WeixinJSBridgeReady", unlockPlay);
-      window.removeEventListener("touchstart", unlockPlay);
-      window.removeEventListener("pointerdown", unlockPlay);
+      cleanupInteractionListeners();
+      document.removeEventListener("WeixinJSBridgeReady", attemptPlay);
     };
   }, []);
 
