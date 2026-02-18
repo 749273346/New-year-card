@@ -41,6 +41,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");
+    console.log(`GET /api/generate-greeting name=${name}`);
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
@@ -59,6 +60,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const name = await parseName(req);
+    console.log(`POST /api/generate-greeting name=${name}`);
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }

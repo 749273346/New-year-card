@@ -54,6 +54,44 @@ export async function generateImage(prompt: string) {
   }
 }
 
+// Fallback poems library
+const fallbackPoems = [
+  [
+    "铁龙飞驰贯九州",
+    "马蹄声碎志未休",
+    "复兴号角催春意",
+    "万里坦途展宏图"
+  ],
+  [
+    "高铁似箭穿云去",
+    "骏马如龙踏雪来",
+    "万里关山一日渡",
+    "春风送暖入千怀"
+  ],
+  [
+    "千山万水一线牵",
+    "马蹄声急报平安",
+    "车轮滚滚逐追梦",
+    "岁月峥嵘谱新篇"
+  ],
+  [
+    "银蛇飞舞啸长风",
+    "天马行空势如虹",
+    "大道通衢连四海",
+    "初心不改乐融融"
+  ],
+  [
+    "钢轨谱写春之歌",
+    "列车承载梦之舟",
+    "马年更上一层楼",
+    "风雨兼程壮志酬"
+  ]
+];
+
+function getRandomFallbackPoem() {
+  return fallbackPoems[Math.floor(Math.random() * fallbackPoems.length)];
+}
+
 // Helper to normalize poem
 const normalizePoem = (rawPoem: unknown): string[] => {
   let lines: string[] = [];
@@ -79,12 +117,7 @@ const normalizePoem = (rawPoem: unknown): string[] => {
   
   // Fallback if empty
   if (lines.length === 0) {
-    return [
-      "铁龙飞驰贯九州",
-      "马蹄声碎志未休",
-      "复兴号角催春意",
-      "万里坦途展宏图"
-    ];
+    return getRandomFallbackPoem();
   }
   
   return lines;
@@ -97,28 +130,39 @@ const parseGreetingContent = (content: string, name: string) => {
     const parsed = JSON.parse(jsonStr);
     parsed.poem = normalizePoem(parsed.poem);
     return parsed;
-  } catch {
-    console.warn("Failed to parse LLM response as JSON:", content);
+  } catch (error) {
+    console.warn(`Failed to parse LLM response as JSON. Name: ${name}, Content:`, content);
+    
+    // Try to extract poem from raw text if parsing fails
     const lines = content.split(/[\n，。！？；,.;!?]/).map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length >= 4) {
+    
+    // Heuristic: if we find 4 consecutive lines of similar length (e.g. 7 chars), use them
+    let bestPoem: string[] = [];
+    for (let i = 0; i <= lines.length - 4; i++) {
+      const candidate = lines.slice(i, i + 4);
+      if (candidate.every(l => l.length >= 5 && l.length <= 9)) {
+        bestPoem = candidate;
+        break;
+      }
+    }
+
+    if (bestPoem.length === 4) {
       return {
-        poem: lines.slice(0, 4),
-        wish: lines.slice(4).join(" ") || `祝${name}新年快乐！`
+        poem: bestPoem,
+        wish: lines.filter(l => !bestPoem.includes(l)).join(" ").slice(0, 100) || `祝${name}新年快乐！`
       };
     }
+
+    // Use random fallback
     return {
-      poem: [
-        "铁龙飞驰贯九州",
-        "马蹄声碎志未休",
-        "复兴号角催春意",
-        "万里坦途展宏图"
-      ],
-      wish: `祝${name}新年快乐，万事如意！`
+      poem: getRandomFallbackPoem(),
+      wish: `祝${name}新年快乐，万事如意！` // Simple fallback wish
     };
   }
 };
 
 export async function generateGreeting(name: string) {
+  console.log(`Generating greeting for: ${name}`);
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
   const zhipuApiKey = process.env.ZHIPU_API_KEY;
 
@@ -150,6 +194,7 @@ export async function generateGreeting(name: string) {
   if (deepseekApiKey) {
     // Use DeepSeek API
     try {
+      console.log("Attempting DeepSeek API...");
       const response = await fetch("https://api.deepseek.com/chat/completions", {
         method: "POST",
         headers: {
@@ -190,6 +235,7 @@ ${referencePrompt}
 
       const data = await response.json();
       const content = data.choices[0].message.content;
+      console.log("DeepSeek success.");
       return parseGreetingContent(content, name);
     } catch (error) {
       console.error("DeepSeek generation failed, falling back...", error);
@@ -198,31 +244,28 @@ ${referencePrompt}
   }
 
   if (!zhipuApiKey) {
-    // console.warn("API Keys are not set, using mock greeting");
+    console.warn("API Keys are not set, using mock greeting");
     // Mock greeting with railway/horse theme (7-character lines, 4 lines)
     return {
-      poem: [
-        "铁龙飞驰贯九州，",
-        "马蹄声碎志未休。",
-        "复兴号角催春意，",
-        "万里坦途展宏图。"
-      ],
+      poem: getRandomFallbackPoem(),
       wish: wishTemplates[Math.floor(Math.random() * wishTemplates.length)]
     };
   }
 
-  const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${zhipuApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "glm-4",
-      messages: [
-         {
-           role: "system",
-           content: `你是一个精通中国传统文化和诗词的AI助手。请为用户生成一段2026马年新年祝福。
+  try {
+    console.log("Attempting Zhipu API...");
+    const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${zhipuApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "glm-4",
+        messages: [
+           {
+             role: "system",
+             content: `你是一个精通中国传统文化和诗词的AI助手。请为用户生成一段2026马年新年祝福。
 核心要求：
 1. 创作一首*七言绝句*（每句七个字，共四句），必须紧扣*铁路/火车/高铁*行业特色以及*马年*元素。诗句中**绝对不要**出现用户姓名。
 2. 编写一段温暖走心的祝福语（wish），其中必须包含用户姓名（${name}）。
@@ -231,23 +274,31 @@ ${referencePrompt}
 5. **拒绝套路**：请避免使用陈词滥调，尝试新颖的比喻和表达方式。
 ${referencePrompt} 
 返回JSON格式，包含 poem (数组，每句一行) 和 wish (字符串)。`
-         },
-         {
-           role: "user",
-           content: `我的名字是${name}，请为我生成马年铁路主题的新年祝福。请给我一点惊喜。`
-         }
-       ],
-       temperature: 0.9,
-    }),
-  });
+           },
+           {
+             role: "user",
+             content: `我的名字是${name}，请为我生成马年铁路主题的新年祝福。请给我一点惊喜。`
+           }
+         ],
+         temperature: 1.0, // Increased from 0.9 for more creativity
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || "Failed to generate greeting");
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Zhipu API Error:", error);
+      throw new Error(error.error?.message || "Failed to generate greeting");
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    console.log("Zhipu success.");
+    return parseGreetingContent(content, name);
+  } catch (error) {
+    console.error("All AI generation failed. Using fallback.", error);
+    return {
+      poem: getRandomFallbackPoem(),
+      wish: wishTemplates[Math.floor(Math.random() * wishTemplates.length)]
+    };
   }
-
-  const data = await response.json();
-  const content = data.choices[0].message.content;
-  
-  return parseGreetingContent(content, name);
 }
