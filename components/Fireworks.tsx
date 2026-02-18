@@ -54,23 +54,32 @@ export default function Fireworks() {
       const audio = new Audio("/firework.mp3");
       audio.volume = 0.8;
       audio.loop = true; // Set loop to true initially
+      audio.preload = "auto";
       audioRef.current = audio;
       audiosRef.current.add(audio);
-
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((e) => {
-          if (!isMounted.current) return;
-          try {
-            audio.pause();
-            audio.currentTime = 0;
-          } catch {}
-          audiosRef.current.delete(audio);
-          if (audioRef.current === audio) audioRef.current = null;
-          if (e.name !== "AbortError" && e.name !== "NotAllowedError") {
-            console.warn("Audio play failed", e);
+      
+      const tryPlay = () => {
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((e) => {
+              if (!isMounted.current) return;
+              try {
+                audio.pause();
+                audio.currentTime = 0;
+              } catch {}
+              audiosRef.current.delete(audio);
+              if (audioRef.current === audio) audioRef.current = null;
+              if (e.name !== "AbortError" && e.name !== "NotAllowedError") {
+                console.warn("Audio play failed", e);
+              }
+            });
           }
-        });
+      };
+
+      if (typeof window !== "undefined" && window.WeixinJSBridge) {
+         window.WeixinJSBridge.invoke("getNetworkType", {}, tryPlay);
+      } else {
+         tryPlay();
       }
     };
 

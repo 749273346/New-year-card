@@ -62,23 +62,40 @@ function CardContent() {
   useEffect(() => {
     if (!loading && greeting) {
       // Randomly select one of the available horse neigh sounds
-      // Excluded large file horse-neigh-3.mp3 (2.4MB)
       const soundFiles = [
         "horse-neigh-1.mp3",
-        // "horse-neigh-2.mp3", // Removed
-        // "horse-neigh-3.mp3", // Removed: too large
         "horse-neigh-4.mp3",
         "horse-neigh-5.mp3",
         "horse-neigh-6.mp3",
         "horse-neigh-7.mp3",
-        // "horse-neigh-8.mp3" // Removed
       ];
       const selectedSound = soundFiles[Math.floor(Math.random() * soundFiles.length)];
       const soundFile = `/music/${selectedSound}`;
       
       const audio = new Audio(soundFile);
       audio.volume = 0.6;
-      audio.play().catch(e => console.warn(`Horse sound (${soundFile}) play failed:`, e));
+      audio.preload = "auto"; // Ensure preload
+      
+      // WeChat Playback Hack
+      const playHorseSound = () => {
+        audio.play().catch(e => {
+            console.warn(`Horse sound (${soundFile}) play failed:`, e);
+            // Try again on next interaction if failed
+            const retryOnInteraction = () => {
+                audio.play().catch(() => {});
+                document.removeEventListener("click", retryOnInteraction);
+                document.removeEventListener("touchstart", retryOnInteraction);
+            };
+            document.addEventListener("click", retryOnInteraction, { once: true });
+            document.addEventListener("touchstart", retryOnInteraction, { once: true });
+        });
+      };
+
+      if (typeof window !== "undefined" && window.WeixinJSBridge) {
+        window.WeixinJSBridge.invoke("getNetworkType", {}, playHorseSound);
+      } else {
+        playHorseSound();
+      }
 
       // Special handling for horse-neigh-6.mp3: limit playback to 2 seconds
       if (selectedSound === "horse-neigh-6.mp3") {
@@ -849,8 +866,8 @@ function CardContent() {
       {isDownloading && (
         <div className="fixed inset-0 z-[300] bg-black/80 flex flex-col items-center justify-center text-white backdrop-blur-sm">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-400 mb-6"></div>
-          <p className="text-xl font-bold tracking-widest animate-pulse">正在精心绘制贺卡...</p>
-          <p className="text-sm opacity-70 mt-2">请稍候，精彩即将呈现</p>
+          <p className="text-xl font-bold tracking-widest animate-pulse">正在保存中，请稍后...</p>
+          <p className="text-sm opacity-70 mt-2">精彩即将呈现</p>
         </div>
       )}
     </div>

@@ -93,7 +93,18 @@ export default function MusicPlayer() {
          setIsPlaying(false);
        } else {
          // 页面恢复显示时尝试恢复播放
-         playAudio();
+         // 微信中恢复播放可能需要再次触发
+         if (typeof window !== "undefined" && window.WeixinJSBridge) {
+             window.WeixinJSBridge.invoke(
+               "getNetworkType",
+               {},
+               () => {
+                 playAudio();
+               }
+             );
+         } else {
+             playAudio();
+         }
        }
     };
     
@@ -109,6 +120,9 @@ export default function MusicPlayer() {
     } else {
       document.addEventListener("WeixinJSBridgeReady", handleWeixinPlay, { once: true });
     }
+    
+    // 针对 iOS 微信的额外处理：监听 YixinJSBridgeReady (有时会用这个)
+    document.addEventListener("YixinJSBridgeReady", handleWeixinPlay, { once: true });
 
     // 监听用户交互
     addInteractionListeners();
@@ -119,6 +133,7 @@ export default function MusicPlayer() {
       audio.src = ""; // 释放资源
       removeInteractionListeners();
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinPlay);
+      document.removeEventListener("YixinJSBridgeReady", handleWeixinPlay);
       document.removeEventListener("visibilitychange", handleAudioInterrupt);
     };
   }, []);
