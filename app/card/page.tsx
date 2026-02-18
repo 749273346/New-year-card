@@ -543,8 +543,8 @@ function CardContent() {
       
       {/* Background Ambient Effects */}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className={`absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-black/20 to-transparent`} />
-        <div className={`absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/40 to-transparent`} />
+        <div className={`absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-black/20 to-transparent`} />
+        <div className={`absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-black/40 to-transparent`} />
       </div>
 
           {/* Card Wrapper for Motion */}
@@ -776,7 +776,7 @@ function CardContent() {
               <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
                 <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted} flex items-center justify-center gap-2`}>
                   <span>汕头水电车间 · 智轨先锋组</span>
-                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.3</span>
+                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.8</span>
                 </div>
               </div>
             </div>
