@@ -26,9 +26,9 @@ export async function generateImage(prompt: string) {
   ];
   const variant = styleVariants[Math.floor(Math.random() * styleVariants.length)];
 
-  // Setup timeout for API call (15 seconds)
+  // Setup timeout for API call (30 seconds)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const response = await fetch("https://open.bigmodel.cn/api/paas/v4/images/generations", {
@@ -63,16 +63,13 @@ export async function generateImage(prompt: string) {
       return localPath;
     } catch (saveError) {
       console.error("Failed to save generated image:", saveError);
-      // If saving fails, we should still try to return a valid image.
-      // Returning the original URL (expires in 1h) is better than nothing, 
-      // but if the user wants PERSISTENCE, this is a partial failure.
-      // However, for the immediate request, the URL works.
+      // Return the remote URL if saving fails, but log it clearly
       return imageUrl; 
     }
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      console.warn("Image generation timed out (15s), using fallback.");
+      console.warn("Image generation timed out (30s), using fallback.");
     } else {
       console.warn("Image generation failed, using fallback:", error);
     }
@@ -285,7 +282,7 @@ ${referencePrompt}
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
 
   try {
     console.log("Attempting Zhipu API...");
