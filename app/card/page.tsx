@@ -411,7 +411,17 @@ function CardContent() {
   };
 
   if (!name) {
-    return <div className="text-white text-center mt-20">Please provide a name.</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-red-900 text-yellow-300 gap-4">
+        <p className="text-xl">请先输入名字生成贺卡</p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-2 bg-yellow-500 text-red-900 rounded-full font-bold shadow-lg hover:bg-yellow-400 transition"
+        >
+          返回首页
+        </button>
+      </div>
+    );
   }
 
   if (loading) {
@@ -684,7 +694,7 @@ function CardContent() {
             <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
                 <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted} flex items-center justify-center gap-2`}>
                   <span>汕头水电车间 · 智轨先锋组</span>
-                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.7</span>
+                  <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.8</span>
                 </div>
               </div>
           </div>
