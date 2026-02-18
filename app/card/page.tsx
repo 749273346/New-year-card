@@ -60,6 +60,9 @@ function CardContent() {
 
   // Play horse neigh sound when card is ready
   useEffect(() => {
+    // WeChat environment: Disable horse sound to prioritize background music
+    if (isWeChat) return;
+
     if (!loading && greeting) {
       // Randomly select one of the available horse neigh sounds
       const soundFiles = [
