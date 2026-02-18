@@ -217,7 +217,7 @@ export async function generateGreeting(name: string) {
   if (deepseekApiKey) {
     // Use DeepSeek API
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
     try {
       console.log("Attempting DeepSeek API...");
       const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -282,7 +282,7 @@ ${referencePrompt}
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
   try {
     console.log("Attempting Zhipu API...");

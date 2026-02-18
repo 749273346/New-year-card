@@ -33,6 +33,7 @@ export default function MusicPlayer() {
     const audio = new Audio(playlist[randomIndex]);
     audio.loop = true;
     audio.volume = 0.4;
+    audio.preload = "auto"; // 强制预加载
     audioRef.current = audio;
 
     // 2. 核心播放逻辑
@@ -85,6 +86,19 @@ export default function MusicPlayer() {
       document.removeEventListener("scroll", handleInteraction, { capture: true });
     };
 
+    // 监听音频中断事件（如来电、后台等）
+    const handleAudioInterrupt = () => {
+       if (document.hidden) {
+         audio.pause();
+         setIsPlaying(false);
+       } else {
+         // 页面恢复显示时尝试恢复播放
+         playAudio();
+       }
+    };
+    
+    document.addEventListener("visibilitychange", handleAudioInterrupt);
+
     // 5. 初始化执行
     // 立即尝试播放
     playAudio();
@@ -105,6 +119,7 @@ export default function MusicPlayer() {
       audio.src = ""; // 释放资源
       removeInteractionListeners();
       document.removeEventListener("WeixinJSBridgeReady", handleWeixinPlay);
+      document.removeEventListener("visibilitychange", handleAudioInterrupt);
     };
   }, []);
 
