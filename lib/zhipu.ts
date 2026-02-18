@@ -1,5 +1,6 @@
 
 import { getRandomBuiltinBackground } from "./backgrounds";
+import { saveGeneratedImage } from "./image-storage";
 
 // Extracted fallback image generation logic
 function generateFallbackImage() {
@@ -47,7 +48,20 @@ export async function generateImage(prompt: string) {
     }
 
     const data = await response.json();
-    return data.data[0].url;
+    const imageUrl = data.data[0].url;
+
+    // Save the image locally and return the local path
+    try {
+      const localPath = await saveGeneratedImage(imageUrl);
+      return localPath;
+    } catch (saveError) {
+      console.error("Failed to save generated image:", saveError);
+      // If saving fails, we should still try to return a valid image.
+      // Returning the original URL (expires in 1h) is better than nothing, 
+      // but if the user wants PERSISTENCE, this is a partial failure.
+      // However, for the immediate request, the URL works.
+      return imageUrl; 
+    }
   } catch (error) {
     console.warn("Image generation failed, using fallback:", error);
     return generateFallbackImage();
@@ -130,7 +144,7 @@ const parseGreetingContent = (content: string, name: string) => {
     const parsed = JSON.parse(jsonStr);
     parsed.poem = normalizePoem(parsed.poem);
     return parsed;
-  } catch (error) {
+  } catch {
     console.warn(`Failed to parse LLM response as JSON. Name: ${name}, Content:`, content);
     
     // Try to extract poem from raw text if parsing fails

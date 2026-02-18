@@ -20,8 +20,9 @@ function getPool(): string[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const pool = JSON.parse(stored);
-      // Ensure it's an array of 10 strings
-      if (Array.isArray(pool) && pool.length === 10) {
+      // Ensure it's an array and has at least one item
+      // We allow up to 30 items, but don't strictly require exactly 30.
+      if (Array.isArray(pool) && pool.length > 0) {
         return pool;
       }
     }
@@ -47,7 +48,7 @@ export function getRandomBuiltinBackground(): string {
 }
 
 // Replaces the oldest background (last index) with the new one (inserted at 0)
-// Maintains a fixed size of 10
+// Maintains a fixed size of 30
 export function saveBackgroundToLocal(url: string) {
   if (typeof window === 'undefined') return;
   
@@ -57,8 +58,8 @@ export function saveBackgroundToLocal(url: string) {
 
   try {
     // Create new pool: [newUrl, ...oldPool]
-    // Then slice to first 10
-    const newPool = [url, ...currentPool].slice(0, 10);
+    // Then slice to first 30
+    const newPool = [url, ...currentPool].slice(0, 30);
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newPool));
   } catch (e) {
