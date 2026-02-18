@@ -65,19 +65,32 @@ function CardContent() {
       // Excluded large file horse-neigh-3.mp3 (2.4MB)
       const soundFiles = [
         "horse-neigh-1.mp3",
-        "horse-neigh-2.mp3",
+        // "horse-neigh-2.mp3", // Removed
         // "horse-neigh-3.mp3", // Removed: too large
         "horse-neigh-4.mp3",
         "horse-neigh-5.mp3",
         "horse-neigh-6.mp3",
         "horse-neigh-7.mp3",
-        "horse-neigh-8.mp3"
+        // "horse-neigh-8.mp3" // Removed
       ];
-      const soundFile = `/music/${soundFiles[Math.floor(Math.random() * soundFiles.length)]}`;
+      const selectedSound = soundFiles[Math.floor(Math.random() * soundFiles.length)];
+      const soundFile = `/music/${selectedSound}`;
       
       const audio = new Audio(soundFile);
       audio.volume = 0.6;
       audio.play().catch(e => console.warn(`Horse sound (${soundFile}) play failed:`, e));
+
+      // Special handling for horse-neigh-6.mp3: limit playback to 2 seconds
+      if (selectedSound === "horse-neigh-6.mp3") {
+        setTimeout(() => {
+          try {
+            audio.pause();
+            audio.currentTime = 0; // Optional: reset if we want to be clean
+          } catch (e) {
+            // Ignore potential errors if audio is already stopped or unloaded
+          }
+        }, 2000);
+      }
     }
   }, [loading, greeting]);
 
