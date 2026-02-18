@@ -61,9 +61,19 @@ function CardContent() {
   // Play horse neigh sound when card is ready
   useEffect(() => {
     if (!loading && greeting) {
-      // Randomly select one of the 8 horse neigh sounds
-      const soundIndex = Math.floor(Math.random() * 8) + 1; // 1 to 8
-      const soundFile = `/music/horse-neigh-${soundIndex}.mp3`;
+      // Randomly select one of the available horse neigh sounds
+      // Excluded large file horse-neigh-3.mp3 (2.4MB)
+      const soundFiles = [
+        "horse-neigh-1.mp3",
+        "horse-neigh-2.mp3",
+        // "horse-neigh-3.mp3", // Removed: too large
+        "horse-neigh-4.mp3",
+        "horse-neigh-5.mp3",
+        "horse-neigh-6.mp3",
+        "horse-neigh-7.mp3",
+        "horse-neigh-8.mp3"
+      ];
+      const soundFile = `/music/${soundFiles[Math.floor(Math.random() * soundFiles.length)]}`;
       
       const audio = new Audio(soundFile);
       audio.volume = 0.6;
