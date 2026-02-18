@@ -13,6 +13,14 @@ import { getRandomBuiltinBackground, saveBackgroundToLocal } from "@/lib/backgro
 
 const Fireworks = dynamic(() => import("@/components/Fireworks"), { ssr: false });
 
+const FONTS = [
+  "font-ma-shan-zheng",
+  "font-noto-serif-sc",
+  "font-zcool-kuaile",
+  "font-zcool-qingke-huangyou",
+  "font-long-cang"
+];
+
 function CardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,6 +49,7 @@ function CardContent() {
   const [exportFilename, setExportFilename] = useState<string | null>(null);
   const [exportImageSize, setExportImageSize] = useState<{ width: number; height: number } | null>(null);
   const [theme, setTheme] = useState<CardTheme>(themes[0]); // Default theme
+  const [currentFont, setCurrentFont] = useState(FONTS[0]); // Default font
   const [showFireworks, setShowFireworks] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -56,6 +65,8 @@ function CardContent() {
   useEffect(() => {
     // Randomize theme on mount
     setTheme(getRandomTheme());
+    // Randomize font on mount
+    setCurrentFont(FONTS[Math.floor(Math.random() * FONTS.length)]);
   }, []);
 
   // Play horse neigh sound when card is ready
@@ -612,7 +623,7 @@ function CardContent() {
               className="relative"
             >
               <div className="inline-block relative mb-2">
-                 <h1 className={`text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white/80 via-white to-white/60 font-serif tracking-widest drop-shadow-sm ${theme.textColorAccent}`}>
+                 <h1 className={`text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white/80 via-white to-white/60 ${currentFont} tracking-widest drop-shadow-sm ${theme.textColorAccent}`}>
                   新年快乐
                 </h1>
               </div>
@@ -620,7 +631,7 @@ function CardContent() {
               <div className="flex items-center justify-center gap-3 mt-2 opacity-90">
                 <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
                 <p className={`text-sm tracking-[0.2em] ${theme.textColorSecondary}`}>
-                  <span className="font-sans font-semibold text-base">2026 丙午马年</span>
+                  <span className={`${currentFont} font-semibold text-base`}>2026 丙午马年</span>
                 </p>
                 <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
               </div>
@@ -629,7 +640,7 @@ function CardContent() {
             {/* Content */}
             <div className="my-6 space-y-8 flex flex-col items-center flex-grow justify-center">
               
-              <div className={`space-y-4 font-serif text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
+              <div className={`space-y-4 ${currentFont} text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
                 {greeting?.poem.map((line, index) => (
                   isCapturing ? (
                     <div key={index} className="flex items-center justify-center gap-2">
@@ -657,7 +668,7 @@ function CardContent() {
               {isCapturing ? (
                 <div className="relative w-full">
                   <div className={`relative px-6 py-5 border-t border-b ${theme.highlightBg} ${theme.borderColor}`}>
-                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
+                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${currentFont} ${theme.textColorSecondary}`}>
                       {greeting && name && renderWishWithBoldName(greeting.wish, name)}
                     </p>
                   </div>
@@ -672,7 +683,7 @@ function CardContent() {
                   <div className={`relative px-6 py-5 border-t border-b backdrop-blur-sm ${theme.highlightBg} ${theme.borderColor}`}>
                   {/* Decorative quotes - Removed */}
                    
-                  <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
+                  <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${currentFont} ${theme.textColorSecondary}`}>
                     {greeting && name && renderWishWithBoldName(greeting.wish, name)}
                   </p>
                 </div>
@@ -682,7 +693,7 @@ function CardContent() {
 
             {/* Footer */}
             <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
-                <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted} flex items-center justify-center gap-2`}>
+                <div className={`text-xs tracking-wider ${currentFont} ${theme.textColorMuted} flex items-center justify-center gap-2`}>
                   <span>汕头水电车间 · 智轨先锋组</span>
                   <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.7</span>
                 </div>
@@ -740,21 +751,21 @@ function CardContent() {
             <div id="card-content" className={`relative z-30 p-8 pt-12 text-center min-h-[600px] flex flex-col justify-between h-full ${theme.textColorPrimary}`}>
               <div className="relative">
                 <div className="inline-block relative mb-2">
-                  <h1 className={`text-4xl md:text-5xl font-bold font-serif tracking-widest drop-shadow-sm ${theme.textColorAccent}`}>
+                  <h1 className={`text-4xl md:text-5xl font-bold ${currentFont} tracking-widest drop-shadow-sm ${theme.textColorAccent}`}>
                     新年快乐
                   </h1>
                 </div>
                 <div className="flex items-center justify-center gap-3 mt-2 opacity-90">
-                  <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
-                  <p className={`text-sm tracking-[0.2em] ${theme.textColorSecondary}`}>
-                    <span className="font-sans font-semibold text-base">2026 丙午马年</span>
-                  </p>
-                  <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
-                </div>
+                <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
+                <p className={`text-sm tracking-[0.2em] ${theme.textColorSecondary}`}>
+                  <span className={`${currentFont} font-semibold text-base`}>2026 丙午马年</span>
+                </p>
+                <span className={`h-[1px] w-8 ${theme.borderColorStrong}`}></span>
+              </div>
               </div>
 
               <div className="my-6 space-y-8 flex flex-col items-center flex-grow justify-center">
-                <div className={`space-y-4 font-serif text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
+                <div className={`space-y-4 ${currentFont} text-xl md:text-2xl leading-relaxed drop-shadow-md py-4 ${theme.textColorPrimary}`}>
                   {greeting?.poem.map((line, index) => (
                     <div key={index} className="flex items-center justify-center gap-2">
                       <span className={`w-1 h-1 rounded-full ${theme.borderColorStrong} opacity-60`} />
@@ -766,7 +777,7 @@ function CardContent() {
 
                 <div className="relative w-full">
                   <div className={`relative px-6 py-5 border-t border-b ${theme.highlightBg} ${theme.borderColor}`}>
-                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${theme.textColorSecondary}`}>
+                    <p className={`text-sm md:text-base leading-7 font-light tracking-wide text-justify indent-8 ${currentFont} ${theme.textColorSecondary}`}>
                       {greeting && name && renderWishWithBoldName(greeting.wish, name)}
                     </p>
                   </div>
@@ -774,7 +785,7 @@ function CardContent() {
               </div>
 
               <div className={`mt-4 pt-4 border-t w-full flex flex-col items-center gap-1 ${theme.borderColor}`}>
-                <div className={`text-xs tracking-wider font-serif ${theme.textColorMuted} flex items-center justify-center gap-2`}>
+                <div className={`text-xs tracking-wider ${currentFont} ${theme.textColorMuted} flex items-center justify-center gap-2`}>
                   <span>汕头水电车间 · 智轨先锋组</span>
                   <span className="font-sans opacity-80 text-[10px] bg-black/10 px-1 rounded">v1.8</span>
                 </div>

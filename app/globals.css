@@ -10,6 +10,31 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-ma-shan-zheng: var(--font-ma-shan-zheng);
+  --font-noto-serif-sc: var(--font-noto-serif-sc);
+  --font-zcool-kuaile: var(--font-zcool-kuaile);
+  --font-zcool-qingke-huangyou: var(--font-zcool-qingke-huangyou);
+  --font-long-cang: var(--font-long-cang);
+}
+
+.font-ma-shan-zheng {
+  font-family: var(--font-ma-shan-zheng), "KaiTi", "STKaiti", serif;
+}
+
+.font-noto-serif-sc {
+  font-family: var(--font-noto-serif-sc), "SongTi", "STSong", serif;
+}
+
+.font-zcool-kuaile {
+  font-family: var(--font-zcool-kuaile), cursive;
+}
+
+.font-zcool-qingke-huangyou {
+  font-family: var(--font-zcool-qingke-huangyou), sans-serif;
+}
+
+.font-long-cang {
+  font-family: var(--font-long-cang), cursive;
 }
 
 @media (prefers-color-scheme: dark) {
