@@ -58,6 +58,15 @@ function CardContent() {
     setTheme(getRandomTheme());
   }, []);
 
+  // Play horse neigh sound when card is ready
+  useEffect(() => {
+    if (!loading && greeting) {
+      const audio = new Audio("/music/horse-neigh.mp3");
+      audio.volume = 0.6;
+      audio.play().catch(e => console.warn("Horse sound play failed:", e));
+    }
+  }, [loading, greeting]);
+
   useEffect(() => {
     if (!name) return;
     const controller = new AbortController();
